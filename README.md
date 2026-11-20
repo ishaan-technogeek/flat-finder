@@ -13,7 +13,7 @@ Hyderabad is second and deliberately partial: 634 societies with their locations
 - **Faint outline**: not checked yet. We have no room sizes for it, so it is neither a pass nor a fail.
 - **Dark**: does not match.
 
-Building shapes come from OpenStreetMap where they are mapped. Where they are not, towers are drawn from the listed tower count and say "approximate shape" on the card. Shapes are visual only; data numbers are never estimated.
+Building shapes come from OpenStreetMap where they are mapped. Where they are not, the outline is drawn to the listed site area and the towers to the listed tower count — and where those are not listed either, the card says so rather than claiming a number: 476 of Gurugram's drawn societies get one tower per 120 homes, and 434 list neither towers nor homes, so their towers are a placeholder. Shapes are visual only; data numbers are never estimated.
 
 ## How bedroom sizes are read
 
