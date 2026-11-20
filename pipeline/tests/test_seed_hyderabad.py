@@ -69,6 +69,17 @@ def test_candidates_need_positive_evidence_and_survive_the_reject_list():
     assert counts == {"named": 6, "after_reject": 3, "after_signal": 2}
 
 
+def test_staff_quarters_are_not_a_society_unless_something_else_vouches_for_them():
+    raw = {"seed-apartments": {"elements": [
+        el("Raj Bhavan Quarters", 17.41, 78.46, oid=1),      # the Governor's estate, not a society
+        el("RBI Staff Quarters", 17.44, 78.47, oid=2),       # housing an employer allots
+        el("Janapriya Quarters", 17.37, 78.56, oid=3),       # a real society: the developer is the evidence
+    ]}, "seed-residential": {"elements": []}}
+    counts, got = seed.candidates(raw)
+    assert [c["name"] for c in got] == ["Janapriya Quarters"]
+    assert counts["after_signal"] == 1
+
+
 def test_merge_blocks_joins_one_society_and_prefers_its_mapped_site():
     blocks = [cand("Lanco Hills Apartments", 17.4100, 78.3800, oid=1),
               cand("Lanco Hills Apartments", 17.4120, 78.3805, src="res", oid=2),  # ~220 m away

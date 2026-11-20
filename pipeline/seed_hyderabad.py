@@ -48,10 +48,15 @@ KNOWN = ["My Home", "Aparna", "Rajapushpa", "Jayabheri", "Lanco", "SMR", "Ramky"
          "Brigade", "Godrej", "Trendset"]
 # "colony" is deliberately absent: in Hyderabad it names a neighbourhood, not a gated society, so it let in
 # Defence Colony, Sindhi Colony and LIC Colony. A real society called X Colony needs a second signal.
+# "quarters" is absent for the same reason, and the evidence is stronger: all 10 names it was the only signal
+# for are housing an employer allots, not housing anyone can buy or rent -- Raj Bhavan Quarters, two sets of
+# MLA Quarters, and the RBI, BSNL, ESIC, P&T, police, bank-officer and "A2" staff quarters. Nobody opens this
+# map to find them, and the portal will never list one. Janapriya Quarters is a real society and stays: its
+# developer is in DEV, which is the second signal "colony" asks for.
 SUF = (r"apartment|appartment|apts|residency|residences|enclave|tower|heights|hills|villa|homes|"
        r"grande|meadows|county|pride|gardens|estate|nivas|sarovar|springs|greens|vistas|habitat|boulevard|"
        r"avenue|court|crest|elite|paradise|serene|symphony|signature|oak|palm|orchid|zenith|bhooja|"
-       r"temple tree|quarters|nilayam|sadan|co operative|cooperative|society")
+       r"temple tree|nilayam|sadan|co operative|cooperative|society")
 # Not a society even when the name looks like one.
 REJECT = (r"^\s*(block|a block|b block|c block|d block|plot|apt|flat|door|h\.?no)\b|^[\d\-/ ]+$|"
           r"hostel|paying guest|\bpg\b|bunglow|bungalow|mens |womens |book shop|medical|"
@@ -294,8 +299,10 @@ def main():
                    f"{c['after_signal']} with positive evidence of being a society (known developer or a society "
                    f"word), {c['after_dedupe']} after clustering blocks and phases within {NEAR_M} m, "
                    f"{c['after_nearby']} after merging differently named areas on one site, {len(rows)} with a "
-                   f"locality from OSM's suburb layer. A sample audit of 70 put precision near 92%, so a handful "
-                   f"of neighbourhoods and staff quarters remain. Every number the seed does not know is null by "
+                   f"locality from OSM's suburb layer. A sample audit of 70 put precision near 92%; the misses "
+                   f"were neighbourhoods and employer-allotted staff quarters, and the quarters are now "
+                   f"excluded by name, so a handful of neighbourhoods remain. Every number the seed does not "
+                   f"know is null by "
                    f"design: prices, unit sizes, towers, units and acres are portal data that the Magicbricks "
                    f"crawl fills in later."),
         "_generated_by": "pipeline/seed_hyderabad.py",
