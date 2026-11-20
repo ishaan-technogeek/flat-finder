@@ -536,7 +536,10 @@ def write_csv(soc_path, unit_path, societies):
             "listings_for_sale", "listings_for_rent", "price_range_min", "price_range_max", "price_per_sqft"]
     for b in range(1, 6):
         cols += [f"buy_{b}bhk_median", f"buy_{b}bhk_estimate", f"rent_{b}bhk_median", f"rent_{b}bhk_estimate", f"{b}bhk_price_flag"]
-    cols += ["rating", "rating_count", "review_count", "amenities", "verified", "smallest_bedroom_ft", "magicbricks_url", "google_maps_url"]
+    # source_url, not magicbricks_url: the column holds s["url"], which is wherever the society was found.
+    # For a city built from a seed file that is its OpenStreetMap node, and naming the portal in the header
+    # credits it with every row it had nothing to do with.
+    cols += ["rating", "rating_count", "review_count", "amenities", "verified", "smallest_bedroom_ft", "source_url", "google_maps_url"]
     with open(soc_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(cols)

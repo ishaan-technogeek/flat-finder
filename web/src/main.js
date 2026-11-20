@@ -73,7 +73,7 @@ async function boot() {
     : `${c.on_map.toLocaleString()} societies mapped from ${(city.sources || ['OpenStreetMap contributors']).join(' and ')} · no listings yet, so no prices or unit sizes`;
   $('about-prices').innerHTML = listings
     ? `Prices and rents are medians of live ${portal} listings. <b>⚠</b> marks a listing price our checks think is a typo (far from the same home nearby, or rent and price that cannot both be right): it is shown as listed but not used for filters. <b>~</b> marks our estimate: rent is about ${((m.city_yield || 0.025) * 100).toFixed(1)}% of the price per year here (measured on ${m.pairs || 0} society and BHK pairs, correlation ${m.log_price_rent_correlation ?? 'n/a'}). "Probably fits" uses a cautious bedroom size estimated from unit size (${city.room_model?.n || 0} verified unit types). Resident ratings exist for ${rated.toLocaleString()} societies.`
-    : `This city has no price data yet. Its societies, their locations and what is nearby come from OpenStreetMap; prices, rents and unit sizes come from listing pages, which have not been read for this city. Until they are, the price and bedroom filters have nothing to match and every society shows as unknown rather than guessed.`;
+    : `This city has no price data yet. Its societies, their locations and what is nearby come from OpenStreetMap; prices, rents and unit sizes come from listing pages, which have not been read for this city. Until they are, what the map can answer is where a society is, what type it is and what is near it. Set a budget or a bedroom size and every society turns to "not checked yet" instead of being guessed at.`;
   $('dl-all').href = `${BASE}data/${cityId}-societies.csv`;
   $('dl-units').href = `${BASE}data/${cityId}-units.csv`;
   $('dl-results').onclick = exportResults;
@@ -257,6 +257,9 @@ function buildFilters() {
   $('amen-q').oninput = amenList;
   $('f-ready').onchange = () => { crit.ready = $('f-ready').checked; applyFilters(); };
   $('f-sort').onchange = () => { sortBy = $('f-sort').value; renderResults(); };
+  // Divy's search is for a 138 sq ft bedroom in a 1,620 sq ft home: real filters, but a city with no
+  // floor plans and no listed sizes can only answer "not checked yet" to all of it.
+  $('preset-divy').hidden = !((data.counts.for_sale || 0) + (data.counts.for_rent || 0));
   $('preset-divy').onclick = () => useCriteria(DIVY);
   $('btn-replay').onclick = intro;
   $('btn-tour').onclick = tour;
@@ -472,11 +475,26 @@ function renderCard(s) {
       ${plans}
       ${!s.verified ? `<a href="${esc(issue)}" target="_blank" rel="noopener">Request a room check →</a>` : ''}
     </div>
-    <div class="fine">${s.rera_id ? 'RERA ' + esc(s.rera_id) + ' · ' : ''}${s.shape === 'osm' ? 'Buildings from OpenStreetMap' : s.shape === 'osm-site' ? 'Boundary from OpenStreetMap, towers drawn approximately' : 'Approximate shape: towers drawn from the listed tower count'}</div>`;
+    <div class="fine">${s.rera_id ? 'RERA ' + esc(s.rera_id) + ' · ' : ''}${shapeNote(s)}</div>`;
   $('card').hidden = false;
   $('c-close').onclick = () => { stopTour(); closeCard(); };
   $('c-star').onclick = () => { toggle(myList, s.id); saveList(); renderCard(s); renderResults(); };
   if (!details) loadDetails().then(() => { if (selected === s.id) renderCard(s); });
+}
+
+// What is real about the shape on the map, society by society. The footer used to tell every drawn
+// society that its "towers [were] drawn from the listed tower count", which is true of 1,293 of
+// Gurugram's 2,203 drawn societies: 476 have no tower count and get one tower per 120 homes, and 434
+// list neither towers nor homes, so their towers are a placeholder. Hyderabad, mapped from
+// OpenStreetMap with no listings, is all 318 placeholders. The outline is a guess of its own: 806 of
+// 2,266 drawn outlines have no site area either and are a circle of an assumed three acres.
+function shapeNote(s) {
+  if (s.shape === 'osm') return 'Buildings from OpenStreetMap';
+  const outline = s.shape === 'osm-site' ? 'Boundary from OpenStreetMap'
+    : s.acres ? `Outline drawn to the listed ${esc(s.acres)} acres` : 'Outline drawn to an assumed size: the site area is not listed';
+  if (s.kind === 'plot') return outline;
+  const towers = s.towers ? `${esc(s.towers)} towers as listed` : s.units ? 'tower count not listed, estimated from the number of homes' : 'towers are a placeholder: neither their number nor the number of homes is listed';
+  return `${outline} · ${towers}, placed approximately`;
 }
 
 let detailsPromise = null;
@@ -575,7 +593,7 @@ function toast(msg) {
 
 // ---------- CSV export of the current results ----------
 function exportResults() {
-  const cols = ['name', 'locality', 'verdict', 'type', crit.mode === 'rent' ? 'rent_from' : 'price_from', 'estimated', 'for_sale', 'for_rent', 'flat_finder_score', 'resident_rating', 'towers', 'units', 'nearest_park_m', 'nearest_metro_m', 'magicbricks_url', 'google_maps_url', 'flat_finder_url'];
+  const cols = ['name', 'locality', 'verdict', 'type', crit.mode === 'rent' ? 'rent_from' : 'price_from', 'estimated', 'for_sale', 'for_rent', 'flat_finder_score', 'resident_rating', 'towers', 'units', 'nearest_park_m', 'nearest_metro_m', 'source_url', 'google_maps_url', 'flat_finder_url'];
   const q = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const rows = ranked().map((s) => {
     const p = priceFor(s, crit.mode, crit.bhk);
@@ -636,16 +654,29 @@ function buildControls() {
 // ---------- onboarding ----------
 function buildOnboarding() {
   const c = data.counts;
+  // Three of these four steps promise prices, rents, ratings and floor plans. A city built from a seed
+  // file has none of them, and an introduction is the worst place to describe data that is not there:
+  // each of the three says instead what that city does have, which is where every society is and what
+  // is near it. The legend in between is true either way.
+  const listings = (c.for_sale || 0) + (c.for_rent || 0);
   const steps = [
-    ['Every society in ' + data.city.name + ', on one map', `${c.on_map.toLocaleString()} housing societies, ${(c.for_sale || 0).toLocaleString()} homes for sale and ${(c.for_rent || 0).toLocaleString()} for rent. Each one has its prices, rents, resident ratings, what is nearby, and links to Google Maps.`],
-    ['Start with what you cannot live without', 'Pick Buy or Rent and your budget. Then set the smallest bedroom you can live with, by both sides or by area in gaj or sq ft. Add amenities and what you want nearby, like a park within 500 m.'],
+    [`Every society in ${esc(data.city.name)}, on one map`, listings
+      ? `${c.on_map.toLocaleString()} housing societies, ${(c.for_sale || 0).toLocaleString()} homes for sale and ${(c.for_rent || 0).toLocaleString()} for rent. Each one has its prices, rents, resident ratings, what is nearby, and links to Google Maps.`
+      : `${c.on_map.toLocaleString()} housing societies, mapped from ${esc((data.sources || ['OpenStreetMap contributors']).join(' and '))}. Each one has where it is, what is near it, and links to Google Maps. No listing pages have been read for this city yet, so it has no prices, rents or floor plans.`],
+    ['Start with what you cannot live without', listings
+      ? 'Pick Buy or Rent and your budget. Then set the smallest bedroom you can live with, by both sides or by area in gaj or sq ft. Add amenities and what you want nearby, like a park within 500 m.'
+      : 'The filters that can answer here are the type of home, ready to move, and what you want nearby, like a park within 500 m. Set a budget or a bedroom size and societies will go to "not checked yet": nobody has read a price or a plan for this city, and the map would rather say so than guess.'],
     ['How to read the map', '<span class="lg match"></span> Verified: every bedroom read from builder plans and passes.<br><span class="lg likely"></span> Likely: the rooms read so far pass.<br><span class="lg probable"></span> Probably fits: plans not read yet, estimated from unit size.<br><span class="lg unknown"></span> Not checked yet: no room data, so neither pass nor fail.'],
-    ['Open a society, keep a list', 'Click any building for prices, bedrooms, ratings and the research behind every number. Star the ones you like, or paste a list of names you already have. Export your results as a CSV any time.'],
+    ['Open a society, keep a list', listings
+      ? 'Click any building for prices, bedrooms, ratings and the research behind every number. Star the ones you like, or paste a list of names you already have. Export your results as a CSV any time.'
+      : 'Click any building for where it is, what is near it, and where every one of its numbers came from. Star the ones you like, or paste a list of names you already have. Export your results as a CSV any time.'],
   ];
   let i = 0;
   const show = () => {
     $('ob-steps').innerHTML = steps.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('');
-    $('ob-body').innerHTML = `<h3>${steps[i][0]}</h3><p>${steps[i][1]}</p>${i === 1 ? '<button class="preset" id="ob-divy">Try an example search</button>' : ''}`;
+    // the example search asks for a 138 sq ft bedroom, which a city with no floor plans can only answer
+    // "not checked yet" to, so it is offered where there is something to find
+    $('ob-body').innerHTML = `<h3>${steps[i][0]}</h3><p>${steps[i][1]}</p>${i === 1 && listings ? '<button class="preset" id="ob-divy">Try an example search</button>' : ''}`;
     $('ob-back').hidden = i === 0;
     $('ob-next').textContent = i === steps.length - 1 ? 'Start exploring' : 'Next';
     $('ob-divy')?.addEventListener('click', () => { useCriteria(DIVY); done(); });
