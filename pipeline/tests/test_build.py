@@ -88,6 +88,16 @@ def test_in_city_pad_keeps_the_surrounding_district():
     assert not build_city.in_city({"lat": 27.90, "lng": 77.1003}, gurgaon)  # well beyond the pad
 
 
+def test_a_city_can_set_its_own_pad():
+    gurgaon = {"bbox": [28.33, 76.88, 28.55, 77.16]}
+    tight = {"bbox": [17.20, 78.20, 17.65, 78.70], "pad": 0}
+    sangareddy = {"lat": 17.6299, "lng": 78.0817}  # 20 km west of the bbox: inside the default pad, not the city
+    assert build_city.in_city(sangareddy, {"bbox": tight["bbox"]})
+    assert not build_city.in_city(sangareddy, tight)
+    assert build_city.in_city({"lat": 17.4401, "lng": 78.3489}, tight)  # Gachibowli, well inside
+    assert build_city.in_city({"lat": 28.1901, "lng": 77.1003}, gurgaon)  # no pad set: Sohna still kept
+
+
 def test_city_tokens_never_count_towards_a_name_match():
     assert "gurugram" in build_city.city_tokens("gurgaon", {"name": "Gurugram"})
     assert "gurgaon" in build_city.city_tokens("gurgaon", {"name": "Gurugram"})

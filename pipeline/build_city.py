@@ -26,6 +26,8 @@ GENERIC = {"the", "of", "at", "in", "sector", "residency", "residences", "homes"
            "floors", "society", "cghs", "group", "housing", "and", "by", "new", "greens", "green", "plaza"}
 TOWER_H = 55.0  # visual default height (m) for generated apartment towers; shapes are not data
 PAD = 0.15  # the portal puts some projects just outside the city bbox (Sohna for Gurugram); keep them
+# A city whose bbox was drawn deliberately can say "pad": 0 instead: 0.15 degrees is ~17 km on every side, which
+# for a metro the size of Hyderabad reaches past the outer ring road into towns nobody searching the city means.
 
 
 def city_tokens(city, cfg):
@@ -40,7 +42,8 @@ def in_city(p, cfg):
     if not p.get("lat") or not p.get("lng"):
         return False
     s, w, n, e = cfg["bbox"]
-    return s - PAD < p["lat"] < n + PAD and w - PAD < p["lng"] < e + PAD
+    pad = cfg["pad"] if cfg.get("pad") is not None else PAD
+    return s - pad < p["lat"] < n + pad and w - pad < p["lng"] < e + pad
 
 
 def tokens(name):
