@@ -19,10 +19,23 @@ TILES = int(CITIES[CITY].get("tiles") or 1)  # split the buildings query when on
 OUT = OUT / CITY
 CACHE = CACHE / CITY
 MIRRORS = [
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter",
+    # last: this mirror has answered every recent request with an SSL EOF, so it only costs a round trip
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ]
+ROUNDS = 4  # passes over the mirror list before giving up
+
+
+def backoff(attempt):
+    """Seconds to wait after a failed attempt.
+
+    A busy mirror answers "server is currently at capacity" and asks for exponential backoff, so wait longer
+    on each pass over the list while still moving to the next mirror quickly (a different one may be free).
+    Capped, so a many-tile fetch cannot stall forever.
+    """
+    return min(10 * 2 ** (attempt // len(MIRRORS)), 300)
 
 
 def overpass(query, name):
@@ -31,7 +44,7 @@ def overpass(query, name):
     if f.exists():
         return json.loads(f.read_text())
     body = urllib.parse.urlencode({"data": query}).encode()
-    for url in MIRRORS * 2:
+    for attempt, url in enumerate(MIRRORS * ROUNDS):
         try:
             req = urllib.request.Request(url, data=body, headers={"User-Agent": "flat-finder/0.1"})
             raw = urllib.request.urlopen(req, timeout=300).read()
@@ -39,9 +52,10 @@ def overpass(query, name):
             f.write_bytes(raw)
             return data
         except Exception as e:
-            print("mirror failed", url, e, flush=True)
-            time.sleep(10)
-    raise SystemExit("all Overpass mirrors failed")
+            wait = backoff(attempt)
+            print(f"mirror failed {url} {e} (retry in {wait}s)", flush=True)
+            time.sleep(wait)
+    raise SystemExit(f"all Overpass mirrors failed for {name}")
 
 
 def tile_bboxes(bbox, n):
