@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { parseArgs, parseFeet, parsePrice, search } from './flatfinder.mjs';
+import { linkFor, parseArgs, parseFeet, parsePrice, search } from './flatfinder.mjs';
 
 it('reads feet and prices', () => {
   expect(parseFeet("11'3")).toBe(11.25);
@@ -16,6 +16,14 @@ it("Divy's search finds Araya and Presidia as matches", () => {
   expect(names).toContain('Pioneer Araya');
   expect(names).toContain('Pioneer Presidia');
   expect(names).not.toContain('Emaar Amaris');
+});
+
+it('links to the city the data came from, not the one --city defaulted to', () => {
+  const s = { id: 'sseed-1f2f824bd8' };
+  // --data hyderabad.json used to print ?city=gurgaon, so following the link opened the wrong city and the id missed
+  expect(linkFor({ city: { id: 'hyderabad' } }, s, 'gurgaon')).toContain('?city=hyderabad&open=sseed-1f2f824bd8');
+  expect(linkFor({ city: { id: 'gurgaon' } }, { id: 's123' }, 'gurgaon')).toContain('?city=gurgaon&open=s123');
+  expect(linkFor({}, s, 'gurgaon')).toContain('?city=gurgaon');  // older data files carry no id
 });
 
 it('reads monthly rent', () => {
