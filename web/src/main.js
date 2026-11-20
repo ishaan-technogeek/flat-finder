@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl';
 import { addBaseLayers, addSocietyLayers, BASE_MODES, createMap, OVERVIEW, setBaseMode, setHighlights, setSelected, setStates, startPulse } from './map.js';
 import { searchSocieties } from './search.js';
 import { createFeed } from './feed.js';
+import { aiRead } from './events.js';
 import { AMENITY_KEYS, DEFAULT_CRITERIA, NEAR, RANK, feetLabel, formatINR, matchSociety, matchUnit, priceFor, roomPasses } from './filters.js';
 import { esc, gmapsUrl, href } from './html.js';
 
@@ -78,7 +79,7 @@ async function boot() {
   $('dl-units').href = `${BASE}data/${cityId}-units.csv`;
   $('dl-results').onclick = exportResults;
 
-  feed = createFeed($('feed'), $('log-mode'), { events: city.events, byId });
+  feed = createFeed($('feed'), $('log-mode'), { societies: city.societies, byId, cityName: city.city.name });
   buildFilters();
   buildSearch();
   buildList();
@@ -133,7 +134,7 @@ function intro() {
   map.jumpTo({ center: [78.5, 22.5], zoom: 2.2, pitch: 0, bearing: 0 });
   setTimeout(() => {
     map.flyTo({ ...OVERVIEW, duration: 4250, curve: 1.6, essential: true });
-    feed.sweep(data.societies, 4500);
+    feed.sweep(4500);
   }, 250);
   map.once('moveend', () => applyFilters(true));
 }
@@ -404,9 +405,7 @@ function renderCard(s) {
   const unitRows = s.unit_types.filter((u) => !crit.bhk.length || crit.bhk.includes(u.bhk)).slice(0, 14).map((u) => {
     const v = rooms || crit.minSqft ? matchUnit(u, crit) : null;
     const bad = (r) => (crit.roomArea ? r[0] * r[1] < crit.roomArea : crit.room && !roomPasses(r, crit.room));
-    const ai = u.ai && [u.ai.min_short != null && `narrowest bedroom ${feetLabel(u.ai.min_short)}`, u.ai.long_lb != null && `every bedroom at least ${feetLabel(u.ai.long_lb)} long`,
-      u.ai.area_lb != null && `at least ${u.ai.area_lb} sq ft`].filter(Boolean).join(', ');
-    const roomText = u.ai ? `${ai || 'partly read'} <span class="fine">(AI estimate from the plan, not confirmed)</span>` : u.bedrooms?.length
+    const roomText = u.ai ? `${aiRead(u.ai) || 'partly read'} <span class="fine">(AI estimate from the plan, not confirmed)</span>` : u.bedrooms?.length
       ? u.bedrooms.map((r) => `<span class="${bad(r) ? 'fail' : ''}">${feetLabel(r[0])} × ${feetLabel(r[1])}</span>`).join(', ') + (u.rooms_complete ? '' : ' <span class="fine">(not all rooms read)</span>')
         + (u.confidence === 'ocr' ? ` <span class="fine">(read from the plan by ${esc(u.checked_by || 'OCR')})</span>` : '')
       : u.est_short ? `<span class="fine">plans not read · estimated at least ${feetLabel(u.est_short)} wide, ~${u.est_area} sq ft</span>` : '<span class="fine">room sizes not read yet</span>';

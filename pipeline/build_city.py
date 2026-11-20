@@ -228,44 +228,6 @@ def match_verified(v, projects, taken=()):
     return best
 
 
-def events_for(s, city_name):
-    ev = []
-    sid = s["id"]
-    src = s.get("url")
-    ev.append({"sid": sid, "step": "Located on map", "finding": f"{s['locality'] or city_name} · {s['lat']:.4f}, {s['lng']:.4f}", "url": src})
-    bits = [f"{int(s['towers'])} towers" if s.get("towers") else None, f"{int(s['units']):,} units" if s.get("units") else None,
-            f"{s['acres']} acres" if s.get("acres") else None]
-    if any(bits):
-        ev.append({"sid": sid, "step": "Project page read", "finding": " · ".join(b for b in bits if b), "url": src})
-    if s.get("rera_id"):
-        ev.append({"sid": sid, "step": "RERA registration", "finding": s["rera_id"][:60], "url": src})
-    if s["amenities"]:
-        ev.append({"sid": sid, "step": f"{len(s['amenities'])} amenities listed", "finding": ", ".join(s["amenities"][:4]), "url": src})
-    for k, f in s.get("amen_facts", {}).items():
-        ev.append({"sid": sid, "step": f"Checked {k} court", "finding": f"{f['value']} · p.{f.get('page')}", "url": f["source"], "verified": True})
-    for u in s["unit_types"]:
-        if u.get("ai"):
-            a = u["ai"]
-            bits = [f"narrowest bedroom {a['min_short']:.2f} ft" if a.get("min_short") else None,
-                    f"every bedroom at least {a['long_lb']} ft long" if a.get("long_lb") else None,
-                    f"and at least {a['area_lb']} sq ft" if a.get("area_lb") else None]
-            ev.append({"sid": sid, "step": "Jev read floor plan", "finding": f"{u['bhk']} BHK · " + ", ".join(b for b in bits if b),
-                       "url": u["source"], "verified": True, "unit": u["label"]})
-            continue
-        if u["bedrooms"] and u.get("confidence") == "ocr":
-            rooms = ", ".join(f"{a:.1f} x {b:.1f} ft" for a, b in u["bedrooms"])
-            ev.append({"sid": sid, "step": f"Read floor plan ({u.get('checked_by')})", "finding": f"{u['bhk']} BHK · bedrooms {rooms}",
-                       "url": u["source"], "verified": True, "unit": u["label"]})
-            continue
-        if u["bedrooms"]:
-            printed = ", ".join(u.get("bedrooms_printed") or [])
-            ev.append({"sid": sid, "step": f"Reading plan p.{u['page']}", "finding": f"{u['label']} · bedrooms {printed}",
-                       "url": u["source"], "verified": u["confidence"] == "primary", "unit": u["label"]})
-        elif u.get("size_sqft"):
-            ev.append({"sid": sid, "step": "Unit type listed", "finding": u["label"], "url": u["source"]})
-    return ev
-
-
 def shapes_for(s, area, bld_grid, sid_seed):
     feats = []
     is_tall = s["kind"] == "apartment"
@@ -338,7 +300,7 @@ def main(city="gurgaon"):
 
     vfile = verified.ROOT / "data" / "verified" / f"{city}.json"
     ver = verified.load_verified(vfile) if vfile.exists() else []
-    societies, shapes, events, used_areas = [], [], [], set()
+    societies, shapes, used_areas = [], [], set()
     for i, p in enumerate(projects):
         s = {"id": f"s{p['mb_id']}", "name": p["name"], "developer": p.get("developer"), "locality": p.get("locality"),
              "lat": round(p["lat"], 6), "lng": round(p["lng"], 6), "status": p.get("status"), "possession": p.get("possession"),
@@ -532,7 +494,6 @@ def main(city="gurgaon"):
         f, shape = shapes_for(s, area, bld_grid, i)
         s["shape"] = shape
         shapes.extend(f)
-        events.extend(events_for(s, cfg["name"]))
 
     WEB.mkdir(parents=True, exist_ok=True)
     city_doc = {"id": city, "name": cfg["name"], "center": cfg["center"], "zoom": cfg["zoom"]}
@@ -546,7 +507,8 @@ def main(city="gurgaon"):
                        "for_sale": sum(s["sale_count"] or 0 for s in societies), "for_rent": sum(s["rent_count"] or 0 for s in societies),
                        "verified": sum(s["verified"] for s in societies)},
             "sources": sources_for(city, cfg, vdir, societies),
-            "societies": societies, "events": events}
+            # the research log's steps are not here: web/src/events.js derives them from the society
+            "societies": societies}
     details = {}
     for s in societies:  # heavy per-society text, loaded only when a card opens
         details[s["id"]] = {k: s.pop(k) for k in DETAIL_KEYS}

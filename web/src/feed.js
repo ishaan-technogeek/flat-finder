@@ -1,10 +1,14 @@
-// Research log: replays real provenance events. Never invents steps.
+// Research log: replays real provenance steps. Never invents one. The steps come from eventsFor(), which
+// derives them from the society itself -- the city file used to ship all 16,174 of them for a panel that
+// shows fourteen lines at a time.
 import { esc } from './html.js';
+import { canVouch, eventsFor } from './events.js';
 
-export function createFeed(el, modeEl, { events, byId }) {
+export function createFeed(el, modeEl, { societies, byId, cityName }) {
   let timer = null;
-  const verifiedEvents = events.filter((e) => e.verified);
-  const ambientPool = verifiedEvents.length ? verifiedEvents : events;
+  const stepsFor = (s) => eventsFor(s, cityName);
+  // The steps worth replaying on their own: built once, from the few hundred societies that can have one.
+  const vouched = societies.filter(canVouch).flatMap(stepsFor).filter((e) => e.verified);
 
   function push(e, { onEach } = {}) {
     const s = byId.get(e.sid);
@@ -23,15 +27,24 @@ export function createFeed(el, modeEl, { events, byId }) {
   function ambient() {
     stop();
     modeEl.textContent = 'replay';
-    let i = Math.floor(Math.random() * ambientPool.length);
-    timer = setInterval(() => push(ambientPool[i++ % ambientPool.length]), 1900);
+    // A city mapped from OpenStreetMap alone has nothing verified yet, so there it walks the societies
+    // themselves and shows a step from each: still real, just no floor plan behind it.
+    const pool = vouched.length ? vouched : societies;
+    let i = Math.floor(Math.random() * pool.length);
+    timer = setInterval(() => {
+      const next = pool[i++ % pool.length];
+      if (vouched.length) return push(next);
+      const steps = stepsFor(next);
+      if (steps.length) push(steps[0]);
+    }, 1900);
   }
 
   function play(sid, onEach) {
     stop();
     el.innerHTML = '';
     modeEl.textContent = 'this society';
-    const list = events.filter((e) => e.sid === sid);
+    const s = byId.get(sid);
+    const list = s ? stepsFor(s) : [];
     let i = 0;
     timer = setInterval(() => {
       if (i >= list.length) { stop(); return; }
@@ -40,7 +53,7 @@ export function createFeed(el, modeEl, { events, byId }) {
   }
 
   // Intro: a fast sweep that names real societies as they are indexed.
-  function sweep(societies, ms) {
+  function sweep(ms) {
     stop();
     modeEl.textContent = 'indexing';
     const pick = societies.filter((s) => s.units || s.verified).sort(() => Math.random() - 0.5).slice(0, 18);
