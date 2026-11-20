@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { linkFor, parseArgs, parseFeet, parsePrice, search } from './flatfinder.mjs';
 
@@ -35,6 +35,14 @@ it('--near filters on what is nearby, and says so when the key is not one', () =
   expect(withPark.length).toBeGreaterThan(0);
   expect(withPark.length).toBeLessThan(all.length);
   expect(withPark.every((r) => r.s.nearby?.park?.m <= 500)).toBe(true);
+});
+
+it('FF_SITE moves where it reads and where its links point', async () => {
+  vi.stubEnv('FF_SITE', 'http://localhost:4173/');
+  vi.resetModules(); // SITE is read once, at import
+  const fresh = await import('./flatfinder.mjs?ff-site');
+  expect(fresh.linkFor({ city: { id: 'hyderabad' } }, { id: 's1' }, 'gurgaon')).toBe('http://localhost:4173/?city=hyderabad&open=s1'); // one slash, not two
+  vi.unstubAllEnvs();
 });
 
 it('reads monthly rent', () => {
