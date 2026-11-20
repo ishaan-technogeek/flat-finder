@@ -2,7 +2,7 @@
 // flatfinder: search the Flat Finder data from a terminal. Same filter logic as the website.
 import { readFile, realpath } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_CRITERIA, feetLabel, formatINR, matchSociety, priceFor } from '../web/src/filters.js';
+import { DEFAULT_CRITERIA, NEAR, feetLabel, formatINR, matchSociety, priceFor } from '../web/src/filters.js';
 
 const SITE = 'https://flat-finder.pages.dev';
 
@@ -18,6 +18,7 @@ const HELP = `flatfinder: find housing societies that fit
   --rent                 renting instead of buying
   --max-rent 80k         monthly rent budget
   --amenity squash,pool  squash pool gym club tennis badminton jogging kids
+  --near park,metro      ${Object.entries(NEAR).map(([k, n]) => `${k} (${n.m} m)`).join(', ')}
   --type apartment       apartment, "builder floor", villa, plot (comma separated)
   --ready                ready to move only
   --likely               also show "likely" (rooms read so far pass)
@@ -51,6 +52,14 @@ export function parseArgs(argv) {
     else if (a === '--rent') o.crit.mode = 'rent';
     else if (a === '--max-rent') { o.crit.mode = 'rent'; o.crit.maxRent = parsePrice(v()); }
     else if (a === '--amenity') o.crit.amenities = v().split(',');
+    // The web app and the MCP server both filter on what is nearby and the CLI could not, though it
+    // shares the code that does it. An unknown key is an error rather than a filter that quietly
+    // matches nothing: isNear would read NEAR[key].kinds off undefined and crash on the first society.
+    else if (a === '--near') o.crit.near = v().split(',').map((k) => {
+      const key = k.trim().toLowerCase();
+      if (!Object.hasOwn(NEAR, key)) throw new Error(`unknown --near "${k}". Try: ${Object.keys(NEAR).join(', ')}`);
+      return key;
+    });
     else if (a === '--type') o.crit.kinds = v().split(',');
     else if (a === '--ready') o.crit.ready = true;
     else if (a === '--likely') o.likely = true;

@@ -26,6 +26,17 @@ it('links to the city the data came from, not the one --city defaulted to', () =
   expect(linkFor({}, s, 'gurgaon')).toContain('?city=gurgaon');  // older data files carry no id
 });
 
+it('--near filters on what is nearby, and says so when the key is not one', () => {
+  const city = JSON.parse(readFileSync(new URL('../web/public/data/gurgaon.json', import.meta.url)));
+  expect(parseArgs(['--near', 'park,Metro']).crit.near).toEqual(['park', 'metro']);
+  expect(() => parseArgs(['--near', 'mteor'])).toThrow(/unknown --near "mteor"/);
+  const withPark = search(city, parseArgs(['--near', 'park']));
+  const all = search(city, parseArgs([]));
+  expect(withPark.length).toBeGreaterThan(0);
+  expect(withPark.length).toBeLessThan(all.length);
+  expect(withPark.every((r) => r.s.nearby?.park?.m <= 500)).toBe(true);
+});
+
 it('reads monthly rent', () => {
   expect(parsePrice('80k')).toBe(80000);
   expect(parseArgs(['--max-rent', '80k']).crit).toMatchObject({ mode: 'rent', maxRent: 80000 });
