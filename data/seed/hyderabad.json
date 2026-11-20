@@ -1,6 +1,7 @@
 {
  "_about": "Curated seed of Hyderabad housing societies. Geometry and names from OpenStreetMap (ODbL): 1306 named building=apartments and landuse=residential elements in the city bbox, 1207 after dropping blocks, plots, hostels and non-residential names, 717 with positive evidence of being a society (known developer or a society word), 675 after clustering blocks and phases within 400 m, 596 after merging differently named areas on one site, 596 with a locality from OSM's suburb layer. A sample audit of 70 put precision near 92%, so a handful of neighbourhoods and staff quarters remain. Every number the seed does not know is null by design: prices, unit sizes, towers, units and acres are portal data that the Magicbricks crawl fills in later.",
- "_generated": "2026-11-20",
+ "_generated_by": "pipeline/seed_hyderabad.py",
+ "_osm_snapshot": "2026-11-20T14:40:39Z",
  "_attribution": "© OpenStreetMap contributors, ODbL",
  "societies": [
   {
