@@ -77,30 +77,38 @@ def to_project(s):
 
 
 def stem(t):
-    """Trailing plural off a word longer than three letters, so "homes" and "home" are one token."""
+    """Trailing plural off a word longer than three letters, so "homes" and "home" are one word."""
     return t[:-1] if len(t) > 3 and t.endswith("s") else t
 
 
-GENERIC_S = {stem(g) for g in build_city.GENERIC}
+def words(name):
+    """Every word of a name, stemmed, keeping the generic ones: "My Homes Navadweepa" -> {my, home, navadweepa}.
 
+    This exists because the two sources disagree about plurals: OSM says "My Home Navadweepa" where the portal
+    says "My Homes Navadweepa", and build_city.GENERIC lists only one of each such pair ("homes" but not
+    "home"), so the leftover singular reads as a distinguishing word and the society arrives twice.
 
-def name_key(name):
-    """build_city.tokens, but plural-blind: the two sources being matched here disagree about plurals.
-
-    OSM says "My Home Navadweepa" where the portal says "My Homes Navadweepa", and GENERIC lists only one of
-    each such pair ("homes" but not "home", "park" but not "parks"), so a strict token set treats the leftover
-    singular as a distinguishing word and the same society arrives twice. On the real crawl index that is 20 of
-    the 635 seed societies. Stemming both sides is safe here because the 400 m test below still has to agree.
+    Keeping the generic words is what makes this safe. Dropping them as well would erase the brand from every
+    "My Home X" -- Hyderabad's largest developer -- leaving {x}, which equals "NC X" and "X Residency".
     """
-    return {s for t in re.findall(r"[a-z0-9]+", (name or "").lower()) if len(t) > 2
-            for s in [stem(t)] if s not in GENERIC_S}
+    return {stem(t) for t in re.findall(r"[a-z0-9]+", (name or "").lower())}
+
+
+def letters(name):
+    """A name with the spacing thrown away, so "R K Towers" and "RK Towers" compare equal."""
+    return re.sub(r"[^a-z0-9]", "", build_city.norm(name) or "")
 
 
 def same_society(a, b):
-    """build_city.dedupe's rule: the same name words, less than 400 m apart. A name built only of generic
-    words (tokens() drops "homes", "towers", ...) has no distinguishing token, so compare the whole name."""
-    at, bt = name_key(a.get("name")), name_key(b.get("name"))
-    same_name = at == bt if at or bt else build_city.norm(a.get("name")) == build_city.norm(b.get("name"))
+    """The same society under either source's spelling, and less than 400 m away.
+
+    Three ways to agree on the name, all of which still have to pass the distance test: dedupe's own rule (the
+    same distinguishing words), the same words outright whatever the plurals, or -- for a name whose every word
+    is generic, where dedupe has no token to compare and gives up -- the same letters.
+    """
+    an, bn = a.get("name"), b.get("name")
+    at, bt = build_city.tokens(an), build_city.tokens(bn)
+    same_name = (bool(at) and at == bt) or words(an) == words(bn) or (not at and not bt and letters(an) == letters(bn))
     if not same_name or not (a.get("lat") and a.get("lng") and b.get("lat") and b.get("lng")):
         return False
     return geo.dist_m((a["lng"], a["lat"]), (b["lng"], b["lat"])) < NEAR_M

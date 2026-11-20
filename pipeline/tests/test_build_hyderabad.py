@@ -133,8 +133,31 @@ def test_a_plural_the_portal_spells_differently_is_still_the_same_society():
     # a plural is not a licence to merge on its own: the 400 m test still decides
     far = crawled("My Homes Navadweepa", 17.4297 + 0.045, 78.3528)
     assert not build_hyderabad.same_society(far, build_hyderabad.to_project(soc(name="My Home Navadweepa")))
-    assert build_hyderabad.name_key("My Homes Navadweepa") == build_hyderabad.name_key("My Home Navadweepa")
-    assert build_hyderabad.name_key("Lanco Hills") != build_hyderabad.name_key("Lanco Hill View")
+    assert build_hyderabad.words("My Homes Navadweepa") == build_hyderabad.words("My Home Navadweepa")
+    assert build_hyderabad.words("Lanco Hills") != build_hyderabad.words("Lanco Hill View")
+
+
+def test_a_developer_name_is_not_generic_however_many_societies_carry_it():
+    # "My Home" is a developer, not a word to throw away: 12 seeded societies are theirs. Dropping the generic
+    # words from a plural-blind key erased it, and left every one of them matching any society of the same name.
+    nc = crawled("NC Vihanga", 17.4295, 78.3526)  # same point, a different builder's society
+    assert not build_hyderabad.same_society(nc, build_hyderabad.to_project(soc(name="My Home Vihanga")))
+    jewel = crawled("Jewel Residency", 17.4295, 78.3526)
+    assert not build_hyderabad.same_society(jewel, build_hyderabad.to_project(soc(name="My Home Jewels")))
+    # ... while the two societies that really do share a name and a place still merge
+    assert build_hyderabad.same_society(crawled("My Home Vihanga", 17.4296, 78.3527),
+                                        build_hyderabad.to_project(soc(name="My Home Vihanga")))
+
+
+def test_a_name_of_nothing_but_generic_words_is_matched_on_its_letters():
+    # tokens() leaves "R K Towers" with nothing: "towers" is generic and the initials are too short. The seed
+    # spells it "R K Towers" and the portal "RK Towers", so an exact-string fallback maps the society twice.
+    rk = crawled("RK Towers", 17.4295, 78.3526)
+    assert build_city.tokens("R K Towers") == set() and build_city.tokens("RK Towers") == set()
+    assert build_hyderabad.same_society(rk, build_hyderabad.to_project(soc(name="R K Towers")))
+    # spacing is all that may differ: a different society of generic words must not be absorbed
+    kk = crawled("KK Towers", 17.4295, 78.3526)
+    assert not build_hyderabad.same_society(kk, build_hyderabad.to_project(soc(name="R K Towers")))
 
 
 def test_same_name_five_km_away_is_a_different_society():
