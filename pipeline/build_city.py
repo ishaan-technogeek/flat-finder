@@ -31,6 +31,24 @@ def tokens(name):
     return {t for t in re.findall(r"[a-z0-9]+", (name or "").lower()) if t not in GENERIC and len(t) > 2}
 
 
+ROMAN = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7, "viii": 8, "ix": 9, "x": 10}
+
+
+def marks(name):
+    """Which phase, block, tower, pocket or sector this is.
+
+    tokens() drops every token of 1 or 2 characters, which is exactly where that number lives, so
+    "RWA Pocket B" and "RWA Pocket E" arrive at dedupe as the same name. A number written two ways is
+    one mark, so "Beverly Park II" and "Beverly Park 2" still merge.
+    """
+    out = set()
+    for t in re.findall(r"[a-z0-9]+", (name or "").lower()):
+        if len(t) > 2 or t in GENERIC:
+            continue
+        out.add(ROMAN[t] if t in ROMAN else int(t) if t.isdigit() else t)
+    return out
+
+
 UNIT_KIND = {"10002": "apartment", "10021": "apartment", "10003": "builder floor", "10000": "plot", "10017": "villa",
              "10007": "commercial", "10008": "commercial", "10009": "commercial", "10022": "apartment"}
 
@@ -114,30 +132,36 @@ def match_area(project, area_grid):
 
 
 def dedupe(projects):
-    """Merge listings with the same name tokens less than 400 m apart (phases, duplicates).
+    """Merge listings with the same name less than 400 m apart (re-listings, the same phase twice).
 
     Two listings can only merge when their name tokens are equal, so group by those tokens and compare
-    distances inside a group instead of against every project kept so far. Same survivors, same order, same
-    merge lists, but the pairwise work is per name instead of per city, which is what a bigger city needs:
-    measured on Gurugram's names grown to Hyderabad's size, 8,000 listings went from 12.0 s to 0.01 s.
+    distances inside a group instead of against every project kept so far: same order and same merge
+    lists, but the pairwise work is per name instead of per city, which is what a bigger city needs.
+    Measured on Gurugram's names grown to Hyderabad's size, 8,000 listings went from 12.0 s to 0.01 s.
+
+    A listing that names a different phase, block, tower or pocket is a different society and is never
+    merged away, however close it is: a merge keeps only one of the two, so it would take the other's
+    listings, units and rating off the map entirely.
     """
     groups = defaultdict(list)
     for i, p in enumerate(projects):
-        groups[frozenset(tokens(p["name"]))].append((i, p))
+        groups[frozenset(tokens(p["name"]))].append((i, p, marks(p["name"])))
     kept = []
     for name, members in groups.items():
         if not name:  # nothing distinguishing left in the name: never merged, so never compared
-            kept += members
+            kept += [(i, p) for i, p, _ in members]
             continue
         here = []
-        for i, p in members:
-            for _, q in here:
+        for i, p, m in members:
+            for _, q, qm in here:
+                if m and qm and not m & qm:  # Pocket B is not Pocket E; Park II is Park 2
+                    continue
                 if geo.dist_m((p["lng"], p["lat"]), (q["lng"], q["lat"])) < 400:
                     q.setdefault("merged", []).append(p["url"])
                     break
             else:
-                here.append((i, p))
-        kept += here
+                here.append((i, p, m))
+        kept += [(i, p) for i, p, _ in here]
     return [p for _, p in sorted(kept, key=lambda t: t[0])]  # back into the order they arrived in
 
 
