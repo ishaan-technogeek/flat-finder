@@ -80,6 +80,10 @@ function smallestRoom(s) {
 
 const money = (p, mode) => (p ? `${p.estimated ? '~' : ''}${formatINR(p.value)}${mode === 'rent' ? '/mo' : ''}` : '');
 
+// The city the data says it is, not the one --city defaulted to: `--data hyderabad.json` printed Gurugram
+// links, so following one opened the wrong city and the society id resolved to nothing.
+export const linkFor = (city, s, fallback) => `${SITE}/?city=${city.city?.id || fallback}&open=${s.id}`;
+
 async function main() {
   const o = parseArgs(process.argv.slice(2));
   if (o.help) return console.log(HELP);
@@ -89,11 +93,11 @@ async function main() {
   console.log(`${rows.length} societies in ${city.city.name}${o.likely ? ' (including likely)' : ''}\n`);
   const table = rows.slice(0, o.limit).map(({ s, v }) => ({
     society: s.name.slice(0, 32), area: (s.locality || '').slice(0, 22), verdict: v + (s.verified ? '*' : ''),
-    'smallest bedroom': smallestRoom(s), [o.crit.mode === 'rent' ? 'rent from' : 'price from']: money(priceFor(s, o.crit.mode, o.crit.bhk), o.crit.mode), link: `${SITE}/?city=${o.city}&open=${s.id}`,
+    'smallest bedroom': smallestRoom(s), [o.crit.mode === 'rent' ? 'rent from' : 'price from']: money(priceFor(s, o.crit.mode, o.crit.bhk), o.crit.mode), link: linkFor(city, s, o.city),
   }));
   console.table(table);
   console.log('~ = our estimate from the rent-to-price ratio, not a listing.');
-  console.log('* verified from brochures or HRERA plans. Unit rows without room sizes are "not checked yet" and never shown as matches.');
+  console.log('* verified from brochures or RERA plans. Unit rows without room sizes are "not checked yet" and never shown as matches.');
 }
 
 const self = fileURLToPath(import.meta.url);
