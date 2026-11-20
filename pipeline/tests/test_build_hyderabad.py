@@ -124,6 +124,19 @@ def test_seed_society_missing_from_the_crawl_is_added():
     assert out[0] is have[0]  # crawled first, so dedupe downstream keeps the crawled copy
 
 
+def test_a_plural_the_portal_spells_differently_is_still_the_same_society():
+    # the real case: OSM named it "My Home Navadweepa", Magicbricks "My Homes Navadweepa", 0 m apart. GENERIC
+    # drops "homes" and keeps "home", so a strict token set would map this society twice, once without prices.
+    have = [crawled("My Homes Navadweepa", 17.4297, 78.3528)]
+    out, c = build_hyderabad.merge_crawled(have, [build_hyderabad.to_project(soc(name="My Home Navadweepa"))])
+    assert out == have and c == {"kept": 1, "merged": 1, "added": 0}
+    # a plural is not a licence to merge on its own: the 400 m test still decides
+    far = crawled("My Homes Navadweepa", 17.4297 + 0.045, 78.3528)
+    assert not build_hyderabad.same_society(far, build_hyderabad.to_project(soc(name="My Home Navadweepa")))
+    assert build_hyderabad.name_key("My Homes Navadweepa") == build_hyderabad.name_key("My Home Navadweepa")
+    assert build_hyderabad.name_key("Lanco Hills") != build_hyderabad.name_key("Lanco Hill View")
+
+
 def test_same_name_five_km_away_is_a_different_society():
     far = crawled("My Home Bhooja", 17.4295 + 0.045, 78.3526)  # ~5 km north
     out, c = build_hyderabad.merge_crawled([far], [build_hyderabad.to_project(soc())])

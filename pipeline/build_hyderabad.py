@@ -9,6 +9,7 @@ usage: python build_hyderabad.py  -> out/hyderabad/mb_projects.json, then the sh
 import hashlib
 import json
 import pathlib
+import re
 
 import build_city
 import geo
@@ -75,10 +76,30 @@ def to_project(s):
             "rent_listings": s.get("rent_listings") or []}
 
 
+def stem(t):
+    """Trailing plural off a word longer than three letters, so "homes" and "home" are one token."""
+    return t[:-1] if len(t) > 3 and t.endswith("s") else t
+
+
+GENERIC_S = {stem(g) for g in build_city.GENERIC}
+
+
+def name_key(name):
+    """build_city.tokens, but plural-blind: the two sources being matched here disagree about plurals.
+
+    OSM says "My Home Navadweepa" where the portal says "My Homes Navadweepa", and GENERIC lists only one of
+    each such pair ("homes" but not "home", "park" but not "parks"), so a strict token set treats the leftover
+    singular as a distinguishing word and the same society arrives twice. On the real crawl index that is 20 of
+    the 635 seed societies. Stemming both sides is safe here because the 400 m test below still has to agree.
+    """
+    return {s for t in re.findall(r"[a-z0-9]+", (name or "").lower()) if len(t) > 2
+            for s in [stem(t)] if s not in GENERIC_S}
+
+
 def same_society(a, b):
     """build_city.dedupe's rule: the same name words, less than 400 m apart. A name built only of generic
     words (tokens() drops "homes", "towers", ...) has no distinguishing token, so compare the whole name."""
-    at, bt = build_city.tokens(a.get("name")), build_city.tokens(b.get("name"))
+    at, bt = name_key(a.get("name")), name_key(b.get("name"))
     same_name = at == bt if at or bt else build_city.norm(a.get("name")) == build_city.norm(b.get("name"))
     if not same_name or not (a.get("lat") and a.get("lng") and b.get("lat") and b.get("lng")):
         return False
