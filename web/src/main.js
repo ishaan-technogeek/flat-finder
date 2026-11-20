@@ -4,9 +4,9 @@ import { addBaseLayers, addSocietyLayers, BASE_MODES, createMap, OVERVIEW, setBa
 import { searchSocieties } from './search.js';
 import { createFeed } from './feed.js';
 import { AMENITY_KEYS, DEFAULT_CRITERIA, NEAR, RANK, feetLabel, formatINR, matchSociety, matchUnit, priceFor, roomPasses } from './filters.js';
+import { esc, href } from './html.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const mobile = matchMedia('(max-width: 700px)').matches;
 const REPO = 'https://github.com/kairothq/flat-finder';
 // Where the site is served from, with a trailing slash. '/' on its own domain, '/<repo>/' on GitHub Pages;
@@ -41,7 +41,9 @@ async function boot() {
   // A bare url opens the city its registry marks default, else the first one built. This fork is a Hyderabad
   // map, so it marks Hyderabad; ?city= still reaches every other city, and 'gurgaon' is only the last resort.
   const landing = Object.keys(cities).find((c) => cities[c].default) || Object.keys(cities)[0] || 'gurgaon';
-  cityId = cities[params.get('city')] ? params.get('city') : landing;
+  // hasOwn, not a truthiness test: ?city=constructor finds Object.prototype.constructor, and the page
+  // then fetches data/constructor.json, gets the 404 page, and dies on parsing it with nothing drawn.
+  cityId = Object.hasOwn(cities, params.get('city') ?? '') ? params.get('city') : landing;
   const [city, shapes] = await Promise.all([
     fetch(`${BASE}data/${cityId}.json`).then((r) => r.json()),
     fetch(`${BASE}data/${cityId}-shapes.geojson`).then((r) => r.json()),
@@ -386,10 +388,11 @@ const metres = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round
 // source link is named after its host, and a society with no source page gets no link instead of a dead one.
 const SOURCE_LABELS = { 'magicbricks.com': 'Magicbricks page', 'openstreetmap.org': 'OpenStreetMap' };
 function sourceLink(url) {
-  if (!url) return '';
+  const h = href(url);
+  if (!h) return '';
   let host = '';
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { /* keep the generic label */ }
-  return `<a href="${esc(url)}" target="_blank" rel="noopener">${SOURCE_LABELS[host] || 'Source page'}</a>`;
+  return `<a href="${h}" target="_blank" rel="noopener">${SOURCE_LABELS[host] || 'Source page'}</a>`;
 }
 
 function renderCard(s) {
@@ -417,9 +420,12 @@ function renderCard(s) {
     `<tr><td>${b} BHK${p.psf ? `<div class="fine">₹${p.psf.toLocaleString()}/sq ft</div>` : ''}</td><td>${cell(p.buy, p.buy_est, false, p.flags?.buy, p.flags?.buy_range)}</td><td>${cell(p.rent, p.rent_est, true, p.flags?.rent, p.flags?.rent_range)}</td></tr>`).join('');
   const d = details?.[s.id];
   const want = new Set(crit.amenities.flatMap((k) => AMENITY_KEYS[k] || [k.slice(2)]));
-  const facts = Object.entries(s.amen_facts || {}).map(([k, f]) => `<span class="hit">${esc(AMEN_LABELS[k] || k)}: ${esc(f.value)} (<a href="${esc(f.source)}" target="_blank" rel="noopener">p.${esc(f.page)}</a>)</span>`).join('');
+  const facts = Object.entries(s.amen_facts || {}).map(([k, f]) => {
+    const cite = href(f.source) ? `<a href="${href(f.source)}" target="_blank" rel="noopener">p.${esc(f.page)}</a>` : `p.${esc(f.page)}`;
+    return `<span class="hit">${esc(AMEN_LABELS[k] || k)}: ${esc(f.value)} (${cite})</span>`;
+  }).join('');
   const amen = s.amenities.map((a) => `<span class="${[...want].some((w) => a.toLowerCase().includes(w)) ? 'hit' : ''}">${esc(a)}</span>`).join('');
-  const plans = Object.entries(s.plan_links || {}).map(([b, urls]) => urls.slice(0, 2).map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${b} BHK plan${urls.length > 1 ? ' ' + (i + 1) : ''}</a>`).join(' ')).join(' ');
+  const plans = Object.entries(s.plan_links || {}).map(([b, urls]) => urls.filter(href).slice(0, 2).map((u, i, kept) => `<a href="${href(u)}" target="_blank" rel="noopener">${b} BHK plan${kept.length > 1 ? ' ' + (i + 1) : ''}</a>`).join(' ')).join(' ');
   const issue = `${REPO}/issues/new?title=${encodeURIComponent('Research: ' + s.name)}&body=${encodeURIComponent(`Please verify room sizes and amenities for ${s.name} (${s.locality || ''}).\n\n${s.url ? `Portal page: ${s.url}\n` : ''}${s.brochure_url ? 'Brochure: ' + s.brochure_url : ''}`)}`;
   const facts2 = [s.towers && `${s.towers} towers`, s.units && `${Number(s.units).toLocaleString()} units`, s.acres && `${s.acres} acres`, s.status, s.possession && `possession ${s.possession}`].filter(Boolean).join(' · ');
   const counts = (s.sale_count || s.rent_count) ? `${(s.sale_count || 0).toLocaleString()} for sale · ${(s.rent_count || 0).toLocaleString()} for rent now` : 'No live listings';
@@ -430,12 +436,13 @@ function renderCard(s) {
   const near = s.nearby || {};
   const nearRows = [['park', 'Park'], ['metro', 'Metro'], ['rail', 'Rail station'], ['school', 'School'], ['hospital', 'Hospital'], ['shopping', 'Mall or supermarket']]
     .filter(([k]) => near[k]).map(([k, l]) => `<div><span>${l}</span><b>${metres(near[k].m)}</b><small>${esc(near[k].name || '')}${near[k].n > 1 ? ` · ${near[k].n} within 1 km` : ''}</small></div>`).join('');
-  const ratingBars = d && Object.keys(d.ratings || {}).length ? `<div class="bars">${Object.entries(d.ratings).map(([k, v]) => `<div><span>${esc(k)}</span><i style="--w:${(v / 5) * 100}%"></i><b>${v}</b></div>`).join('')}</div>` : '';
+  const ratingBars = d && Object.keys(d.ratings || {}).length ? `<div class="bars">${Object.entries(d.ratings).map(([k, v]) => `<div><span>${esc(k)}</span><i style="--w:${(Number(v) / 5) * 100}%"></i><b>${esc(v)}</b></div>`).join('')}</div>` : '';
   const reviews = d?.reviews?.length ? `<div class="reviews">${d.reviews.slice(0, 3).map((r) => `<blockquote>${esc(r.text)}<cite>${esc(r.by || 'Resident')}${r.date ? ' · ' + esc(r.date) : ''}</cite></blockquote>`).join('')}</div>` : '';
   const trend = d?.trend?.length > 1 ? sparkline(d.trend) : '';
   const about = d?.description ? `<details><summary>About this project</summary><p class="fine">${esc(d.description)}</p></details>` : '';
   const inList = myList.includes(s.id);
-  const photos = d?.images?.length ? `<div class="photos">${d.images.map((im) => `<a href="${esc(im.full)}" target="_blank" rel="noopener"><img src="${esc(im.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.remove()"></a>`).join('')}</div><div class="fine">Photos: Magicbricks, opens full size</div>` : '';
+  const shots = (d?.images || []).filter((im) => href(im.full) && href(im.thumb));
+  const photos = shots.length ? `<div class="photos">${shots.map((im) => `<a href="${href(im.full)}" target="_blank" rel="noopener"><img src="${href(im.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.remove()"></a>`).join('')}</div><div class="fine">Photos: Magicbricks, opens full size</div>` : '';
   $('card').innerHTML = `
     <div class="card-head">
       <div><span class="badge ${st}">${STATE_LABEL[st]}</span> ${s.verified ? '<span class="badge match">checked by hand</span>' : ''}${s.ai_read ? '<span class="badge likely">AI-read plans</span>' : ''}</div>
@@ -458,10 +465,10 @@ function renderCard(s) {
     ${facts || amen ? `<h4>Amenities (${s.amenities.length})</h4><div class="amen">${facts}${amen}</div>` : ''}
     ${about}
     <div class="links">
-      <a class="btnlink" href="${esc(s.gmaps)}" target="_blank" rel="noopener">Google Maps and reviews</a>
-      <a class="btnlink" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">Directions</a>
+      ${href(s.gmaps) ? `<a class="btnlink" href="${href(s.gmaps)}" target="_blank" rel="noopener">Google Maps and reviews</a>` : ''}
+      <a class="btnlink" href="https://www.google.com/maps/dir/?api=1&destination=${Number(s.lat)},${Number(s.lng)}" target="_blank" rel="noopener">Directions</a>
       ${sourceLink(s.url)}
-      ${s.brochure_url ? `<a href="${esc(s.brochure_url)}" target="_blank" rel="noopener">Brochure</a>` : ''}
+      ${href(s.brochure_url) ? `<a href="${href(s.brochure_url)}" target="_blank" rel="noopener">Brochure</a>` : ''}
       ${plans}
       ${!s.verified ? `<a href="${esc(issue)}" target="_blank" rel="noopener">Request a room check →</a>` : ''}
     </div>
@@ -479,11 +486,13 @@ function loadDetails() {
 }
 
 function sparkline(trend) {
-  const vals = trend.map((t) => t[1]), lo = Math.min(...vals), hi = Math.max(...vals), w = 200, h = 36;
+  // The quarter labels are text off the portal page and the prices beside them are whatever the page
+  // said: the labels get escaped and the prices coerced, or one trend row writes its own HTML in here.
+  const vals = trend.map((t) => Number(t[1])), lo = Math.min(...vals), hi = Math.max(...vals), w = 200, h = 36;
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - 4 - ((v - lo) / (hi - lo || 1)) * (h - 8)}`).join(' ');
   const ch = ((vals.at(-1) - vals[0]) / vals[0]) * 100;
   return `<div class="trend"><svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-    <span class="fine">Average price per sq ft ${trend[0][0]} to ${trend.at(-1)[0]}: ₹${vals[0].toLocaleString()} to ₹${vals.at(-1).toLocaleString()} (${ch >= 0 ? '+' : ''}${ch.toFixed(0)}%)</span></div>`;
+    <span class="fine">Average price per sq ft ${esc(trend[0][0])} to ${esc(trend.at(-1)[0])}: ₹${vals[0].toLocaleString()} to ₹${vals.at(-1).toLocaleString()} (${ch >= 0 ? '+' : ''}${ch.toFixed(0)}%)</span></div>`;
 }
 
 // ---------- phone: one bottom sheet, two tabs (search | society) ----------
