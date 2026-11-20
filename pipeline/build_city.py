@@ -248,6 +248,16 @@ def sources_for(city, cfg, vdir):
     return out
 
 
+def plan_urls(ai_plans, ocr_plans):
+    """Every floor plan url, in a fixed order.
+
+    Iterating the union as a set ordered the rows by string hash, which Python randomises per process, so two
+    builds of the same inputs wrote the same unit_types in a different order: a rebuild showed hundreds of
+    societies as changed and no data diff could be read.
+    """
+    return sorted(set(ai_plans) | set(ocr_plans))
+
+
 def main(city="gurgaon"):
     cfg = json.loads((ROOT.parent / "data" / "cities.json").read_text())[city]
     GENERIC.update(city_tokens(city, cfg))
@@ -306,7 +316,7 @@ def main(city="gurgaon"):
     ai_plans = json.loads((vdir / f"{city}-ai.json").read_text())["plans"] if (vdir / f"{city}-ai.json").exists() else {}
     ocr_plans = json.loads((vdir / f"{city}-ocr.json").read_text())["plans"] if (vdir / f"{city}-ocr.json").exists() else {}
     by_sid = {s["id"]: s for s in societies}
-    for url in set(ai_plans) | set(ocr_plans):
+    for url in plan_urls(ai_plans, ocr_plans):
         o, j = ocr_plans.get(url, {}), ai_plans.get(url, {})
         s = by_sid.get(o.get("sid") or j.get("sid"))
         if not s or s.get("verified"):

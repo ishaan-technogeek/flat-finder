@@ -81,6 +81,15 @@ def test_city_tokens_never_count_towards_a_name_match():
     assert {"hyderabad", "secunderabad", "hitec"} <= build_city.city_tokens("hyderabad", cfg)
 
 
+def test_plan_urls_do_not_depend_on_string_hashing():
+    ai = {"https://img/b.jpg": {}, "https://img/a.jpg": {}}
+    ocr = {"https://img/c.jpg": {}, "https://img/a.jpg": {}}
+    assert build_city.plan_urls(ai, ocr) == ["https://img/a.jpg", "https://img/b.jpg", "https://img/c.jpg"]
+    # the union used to be iterated as a set, so a rebuild reordered unit_types and churned the data files
+    assert build_city.plan_urls(ocr, ai) == build_city.plan_urls(ai, ocr)
+    assert build_city.plan_urls({}, {}) == []
+
+
 def test_match_verified_needs_whole_name_and_sector():
     ps = [{"mb_id": 1, "name": "M3M", "locality": "Sector 65"},
           {"mb_id": 2, "name": "M3M Heights", "locality": "Sector 65"},
