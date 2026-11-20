@@ -40,6 +40,36 @@ def test_dedupe_keeps_arrival_order_and_leaves_a_wholly_generic_name_alone():
     assert build_city.tokens("The Towers") == set()
 
 
+def test_dedupe_keeps_a_named_block_apart_from_its_neighbour():
+    # real Gurugram merges: RWA Pocket B (1,100 homes) was merged into Pocket E 180 m away, and both
+    # DLF Building 10 and Ultra Premium Floors Sector 22 and 23 disappeared into their neighbours
+    rows = [{"name": "RWA Pocket E", "lng": 77.0860, "lat": 28.4700, "url": "e"},
+            {"name": "RWA Pocket B", "lng": 77.0878, "lat": 28.4702, "url": "b"},  # ~180 m
+            {"name": "DLF Building 9", "lng": 77.0920, "lat": 28.4950, "url": "b9"},
+            {"name": "DLF Building 10", "lng": 77.0921, "lat": 28.4951, "url": "b10"},  # ~15 m
+            {"name": "Ultra Premium Floors Sector 22", "lng": 77.0700, "lat": 28.4800, "url": "s22"},
+            {"name": "Ultra Premium Floors Sector 23", "lng": 77.0701, "lat": 28.4801, "url": "s23"}]
+    out = build_city.dedupe(rows)
+    assert [p["url"] for p in out] == ["e", "b", "b9", "b10", "s22", "s23"]
+    assert not any("merged" in p for p in out)
+
+
+def test_dedupe_still_merges_a_number_written_two_ways():
+    # the other half of the same rule: "II" and "2" are one mark, so these two are still one society
+    rows = [{"name": "DLF Beverly Park II", "lng": 77.0920, "lat": 28.4760, "url": "r"},
+            {"name": "Dlf Beverly Park 2", "lng": 77.0925, "lat": 28.4762, "url": "a"},  # ~50 m
+            {"name": "DLF Beverly Park", "lng": 77.0924, "lat": 28.4761, "url": "u"}]  # unnumbered: merges either way
+    out = build_city.dedupe(rows)
+    assert [p["url"] for p in out] == ["r"] and out[0]["merged"] == ["a", "u"]
+
+
+def test_marks_reads_only_the_part_tokens_drops():
+    assert build_city.marks("RWA Pocket B") == {"b"}
+    assert build_city.marks("M3M Antalya Hills Phase I") == {1}  # "m3m" is 3 chars, so it is a name token
+    assert build_city.marks("Dlf Beverly Park 2") == build_city.marks("DLF Beverly Park II") == {2}
+    assert build_city.marks("Heritage One") == set()  # "one" is a word here, not a phase number
+
+
 def test_kind_of():
     assert build_city.kind_of({"config_text": "2, 3, 4 BHK Multistorey Apartments"}) == "apartment"
     assert build_city.kind_of({"config_text": "Residential Plot"}) == "plot"
