@@ -26,6 +26,17 @@ it('links to the city the data came from, not the one --city defaulted to', () =
   expect(linkFor({}, s, 'gurgaon')).toContain('?city=gurgaon');  // older data files carry no id
 });
 
+it('--near filters on what is nearby, and says so when the key is not one', () => {
+  const city = JSON.parse(readFileSync(new URL('../web/public/data/gurgaon.json', import.meta.url)));
+  expect(parseArgs(['--near', 'park,Metro']).crit.near).toEqual(['park', 'metro']);
+  expect(() => parseArgs(['--near', 'mteor'])).toThrow(/unknown --near "mteor"/);
+  const withPark = search(city, parseArgs(['--near', 'park']));
+  const all = search(city, parseArgs([]));
+  expect(withPark.length).toBeGreaterThan(0);
+  expect(withPark.length).toBeLessThan(all.length);
+  expect(withPark.every((r) => r.s.nearby?.park?.m <= 500)).toBe(true);
+});
+
 it('FF_SITE moves where it reads and where its links point', async () => {
   vi.stubEnv('FF_SITE', 'http://localhost:4173/');
   vi.resetModules(); // SITE is read once, at import
