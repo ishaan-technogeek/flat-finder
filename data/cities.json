@@ -4,5 +4,6 @@
   "bangalore": { "name": "Bengaluru", "magicbricks": "bangalore", "bbox": [12.80, 77.40, 13.20, 77.80], "center": [77.60, 12.97], "zoom": 11.4 },
   "mumbai": { "name": "Mumbai", "magicbricks": "mumbai", "bbox": [18.89, 72.77, 19.30, 73.05], "center": [72.88, 19.08], "zoom": 11.4 },
   "hyderabad": { "name": "Hyderabad", "magicbricks": "hyderabad", "bbox": [17.20, 78.20, 17.65, 78.70], "center": [78.43, 17.42], "zoom": 11.2,
-                 "tokens": ["hyderabad", "secunderabad", "telangana", "hitec", "hitech", "cyberabad"], "tiles": 4, "default_mode": "rent" }
+                 "tokens": ["hyderabad", "secunderabad", "telangana", "hitec", "hitech", "cyberabad"], "tiles": 4, "default_mode": "rent",
+                 "default": true }
 }

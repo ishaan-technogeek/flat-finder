@@ -38,7 +38,10 @@ const highlights = { glow: true, bounds: true, labels: true, ...store.get('ff-hi
 
 async function boot() {
   const cities = await fetch(`${BASE}data/cities.json`).then((r) => r.json()).catch(() => ({ gurgaon: { name: 'Gurugram' } }));
-  cityId = cities[params.get('city')] ? params.get('city') : 'gurgaon';
+  // A bare url opens the city its registry marks default, else the first one built. This fork is a Hyderabad
+  // map, so it marks Hyderabad; ?city= still reaches every other city, and 'gurgaon' is only the last resort.
+  const landing = Object.keys(cities).find((c) => cities[c].default) || Object.keys(cities)[0] || 'gurgaon';
+  cityId = cities[params.get('city')] ? params.get('city') : landing;
   const [city, shapes] = await Promise.all([
     fetch(`${BASE}data/${cityId}.json`).then((r) => r.json()),
     fetch(`${BASE}data/${cityId}-shapes.geojson`).then((r) => r.json()),

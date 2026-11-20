@@ -523,7 +523,10 @@ def main(city="gurgaon"):
     from collections import Counter
     built = sorted(p.stem for p in WEB.glob("*.json") if p.stem != "cities")
     all_cfg = json.loads((ROOT.parent / "data" / "cities.json").read_text())
-    (WEB / "cities.json").write_text(json.dumps({c: {"name": all_cfg[c]["name"]} for c in built if c in all_cfg}))
+    # "default" rides along so the web app knows which city a bare url opens without hardcoding one of them
+    (WEB / "cities.json").write_text(json.dumps(
+        {c: {"name": all_cfg[c]["name"], **({"default": True} if all_cfg[c].get("default") else {})}
+         for c in built if c in all_cfg}))
     print(doc["counts"], Counter(s["shape"] for s in societies), Counter(s["kind"] for s in societies), "features", len(shapes))
 
 
