@@ -81,7 +81,7 @@ cd ../web && npm install && npm run dev
 
 Tests: `cd pipeline && uv run --with pytest pytest` and `cd web && npx vitest run --root .. cli web/src`.
 
-Cities live in `data/cities.json`. Gurugram and Hyderabad are built; Bengaluru and Mumbai are configured and need the pipeline run (see the skill, Job 2). A city may set `default_mode` to `rent` to open on monthly rents, `tiles` to split its buildings query when one bbox is too big for Overpass, and `priority` (`{name, center: [lng, lat], km}`) to have the crawler read one area first — Hyderabad reads the 10 km around HITEC City before the rest of the city. Nothing is dropped either way; `priority` only changes the order pages are fetched in.
+Cities live in `data/cities.json`. Gurugram and Hyderabad are built; Bengaluru and Mumbai are configured and need the pipeline run (see the skill, Job 2). A city may set `default_mode` to `rent` to open on monthly rents, `tiles` to split its buildings query when one bbox is too big for Overpass, and `priority` (`{name, center: [lng, lat], km}`) to have the crawler read one area first — Hyderabad reads the 5 km around HITEC City before the rest of the city. Nothing is dropped either way; `priority` only changes the order pages are fetched in.
 
 Press `/` to search for a society. The Streets button switches to a street map with road and sector names.
 

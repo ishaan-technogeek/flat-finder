@@ -162,7 +162,9 @@ def place_by_pincode(done, least=3):
     project page -- so the queue cannot be ordered by distance until something has been read. The pages
     already in hand give it: the median position of the projects sharing a pincode. Hyderabad's first
     9,986 pages placed 144 pincodes and 28,021 of its 28,101 cards, with half the projects inside 760 m
-    of their pincode's median and nine in ten inside 3.9 km. Coarse, which is all a 10 km bucket needs.
+    of their pincode's median and nine in ten inside 3.9 km. Coarse, so the smaller the radius the fuzzier
+    its edge -- but the queue is ordered by distance throughout, so a misplaced project is read a little
+    early or a little late, never skipped.
     """
     at = collections.defaultdict(list)
     for r in done.values():
@@ -176,7 +178,7 @@ def prioritise(todo, done, pri):
     """todo reordered so a city's priority area is read first. Nothing is dropped, only moved later.
 
     A city names its area in data/cities.json: "priority": {"name": "HITEC City", "center": [lng, lat],
-    "km": 10}. Inside that radius, nearest first; then everything else, also nearest first, so the
+    "km": 5}. Inside that radius, nearest first; then everything else, also nearest first, so the
     boundary is a priority line and not a cliff; then the few cards no pincode could place. The output
     file stays in index order either way -- save() writes it that way -- so this changes when a project
     is read and nothing about what the build then makes of it.
