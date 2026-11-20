@@ -8,21 +8,25 @@ on:
     branches: [feat/hyderabad]
   workflow_dispatch:
 
+# Least privilege per job. The job that runs `npm ci` over a third-party dependency tree can read the repo and
+# the Pages config and nothing else; only the deploy job can mint an OIDC token or publish a deployment.
 permissions:
   contents: read
-  pages: write
-  id-token: write
+  pages: read
 
-# one deploy at a time, and a newer commit supersedes a running one
+# One deploy at a time, and never cancel one that is already publishing: a cancelled deploy-pages leaves the
+# github-pages environment holding a deployment stuck in progress.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        id: pages
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -36,9 +40,12 @@ jobs:
         run: npx vitest run --root .. cli web/src
       - name: Build
         working-directory: web
-        # taken from the repository name rather than hardcoded, so a rename or a second fork still works
-        run: PAGES_BASE="/${GITHUB_REPOSITORY#*/}/" npm run build
-      - uses: actions/configure-pages@v5
+        # The prefix comes from Pages itself rather than from the repository name, so it is also right at a user
+        # site or behind a custom domain, where base_path is "" and the site is served from the root. Passed as
+        # an env var rather than interpolated into the script.
+        env:
+          PAGES_BASE: ${{ steps.pages.outputs.base_path }}/
+        run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist
@@ -46,6 +53,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}

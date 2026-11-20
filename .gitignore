@@ -1,6 +1,10 @@
 pipeline/cache/
 pipeline/cache_*.log
 pipeline/out/*/osm_buildings.geojson
+# Hyderabad's crawl output: a 28 MB list index and, at 28,101 projects, ~100 MB of project records, which
+# is past the 100 MiB file GitHub refuses on push. Neither is deployed and both are rebuilt by mb_crawl.py.
+pipeline/out/hyderabad/mb_index.json
+pipeline/out/hyderabad/mb_projects.json
 node_modules/
 web/dist/
 .DS_Store
