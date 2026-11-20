@@ -447,11 +447,26 @@ function renderCard(s) {
       ${plans}
       ${!s.verified ? `<a href="${esc(issue)}" target="_blank" rel="noopener">Request a room check →</a>` : ''}
     </div>
-    <div class="fine">${s.rera_id ? 'RERA ' + esc(s.rera_id) + ' · ' : ''}${s.shape === 'osm' ? 'Buildings from OpenStreetMap' : s.shape === 'osm-site' ? 'Boundary from OpenStreetMap, towers drawn approximately' : 'Approximate shape: towers drawn from the listed tower count'}</div>`;
+    <div class="fine">${s.rera_id ? 'RERA ' + esc(s.rera_id) + ' · ' : ''}${shapeNote(s)}</div>`;
   $('card').hidden = false;
   $('c-close').onclick = () => { stopTour(); closeCard(); };
   $('c-star').onclick = () => { toggle(myList, s.id); saveList(); renderCard(s); renderResults(); };
   if (!details) loadDetails().then(() => { if (selected === s.id) renderCard(s); });
+}
+
+// What is real about the shape on the map, society by society. The footer used to tell every drawn
+// society that its "towers [were] drawn from the listed tower count", which is true of 1,293 of
+// Gurugram's 2,203 drawn societies: 476 have no tower count and get one tower per 120 homes, and 434
+// list neither towers nor homes, so their towers are a placeholder -- and a city seeded from
+// OpenStreetMap rather than crawled is all placeholders. The outline is a guess of its own: 806 of
+// 2,266 drawn outlines have no site area either and are a circle of an assumed three acres.
+function shapeNote(s) {
+  if (s.shape === 'osm') return 'Buildings from OpenStreetMap';
+  const outline = s.shape === 'osm-site' ? 'Boundary from OpenStreetMap'
+    : s.acres ? `Outline drawn to the listed ${esc(s.acres)} acres` : 'Outline drawn to an assumed size: the site area is not listed';
+  if (s.kind === 'plot') return outline;
+  const towers = s.towers ? `${esc(s.towers)} towers as listed` : s.units ? 'tower count not listed, estimated from the number of homes' : 'towers are a placeholder: neither their number nor the number of homes is listed';
+  return `${outline} · ${towers}, placed approximately`;
 }
 
 let detailsPromise = null;
@@ -550,7 +565,7 @@ function toast(msg) {
 
 // ---------- CSV export of the current results ----------
 function exportResults() {
-  const cols = ['name', 'locality', 'verdict', 'type', crit.mode === 'rent' ? 'rent_from' : 'price_from', 'estimated', 'for_sale', 'for_rent', 'flat_finder_score', 'resident_rating', 'towers', 'units', 'nearest_park_m', 'nearest_metro_m', 'magicbricks_url', 'google_maps_url', 'flat_finder_url'];
+  const cols = ['name', 'locality', 'verdict', 'type', crit.mode === 'rent' ? 'rent_from' : 'price_from', 'estimated', 'for_sale', 'for_rent', 'flat_finder_score', 'resident_rating', 'towers', 'units', 'nearest_park_m', 'nearest_metro_m', 'source_url', 'google_maps_url', 'flat_finder_url'];
   const q = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const rows = ranked().map((s) => {
     const p = priceFor(s, crit.mode, crit.bhk);
