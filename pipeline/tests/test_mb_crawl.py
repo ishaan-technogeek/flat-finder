@@ -112,3 +112,43 @@ def test_resume_from_a_truncated_checkpoint_starts_over_instead_of_crashing(tmp_
     f = tmp_path / "mb_projects.json"
     f.write_text("")  # the 0-byte file the old non-atomic write could leave behind
     assert mb_crawl.resume(f, [{"url": "https://m/a"}]) == ({}, [])
+
+
+def test_a_pincode_sits_at_the_median_of_the_pages_already_read():
+    rows = [{"pincode": "500081", "lng": 78.30, "lat": 17.40},
+            {"pincode": "500081", "lng": 78.38, "lat": 17.45},  # the middle one, and the answer
+            {"pincode": "500081", "lng": 78.90, "lat": 17.90},  # an outlier a mean would chase
+            {"pincode": "500084", "lng": 78.30, "lat": 17.50},
+            {"pincode": "500084", "lng": 78.31, "lat": 17.51},  # two pages is too thin to place a pincode
+            {"pincode": None, "lng": 78.30, "lat": 17.50},
+            {"pincode": "500072", "lat": None, "lng": None}]  # a page whose coordinates never parsed
+    assert mb_crawl.place_by_pincode({str(i): r for i, r in enumerate(rows)}) == {"500081": (78.38, 17.45)}
+
+
+def read_pages(n, step=0.025):
+    """n pincodes due north of (78, 17) at ~2.8 km spacing, three already-read projects on each."""
+    return {f"https://m/read/{i}/{j}": {"pincode": f"5000{i:02d}", "lng": 78.0, "lat": 17.0 + i * step}
+            for i in range(n) for j in range(3)}
+
+
+def test_the_priority_area_is_read_first_and_nothing_is_dropped(capsys):
+    done = read_pages(25)  # pincodes 0.0, 2.8, 5.6, 8.3, 11.1 ... km from the centre, so four are inside
+    todo = [{"url": f"https://m/todo/{i}", "pincode": f"5000{i:02d}"} for i in reversed(range(25))]
+    todo += [{"url": "https://m/todo/nowhere", "pincode": "999999"},  # a pincode no read page placed
+             {"url": "https://m/todo/blank"}]  # a card the portal gave no pincode at all
+    out = mb_crawl.prioritise(todo, done, {"name": "Test City", "center": [78.0, 17.0], "km": 10})
+
+    assert sorted(p["url"] for p in out) == sorted(p["url"] for p in todo)  # a permutation: nothing dropped
+    assert [p["url"] for p in out[:4]] == [f"https://m/todo/{i}" for i in range(4)]  # the area, nearest first
+    assert [p["url"] for p in out[4:25]] == [f"https://m/todo/{i}" for i in range(4, 25)]  # then the rest, same way
+    assert [p["url"] for p in out[25:]] == ["https://m/todo/nowhere", "https://m/todo/blank"]  # last, not never
+    assert "4 of 27 unread projects are within 10 km of Test City" in capsys.readouterr().out
+
+
+def test_a_crawl_with_nothing_placed_yet_keeps_the_index_order():
+    pri = {"name": "Test City", "center": [78.0, 17.0], "km": 10}
+    todo = [{"url": "https://m/a", "pincode": "500081"}, {"url": "https://m/b", "pincode": "500084"}]
+    assert mb_crawl.prioritise(todo, read_pages(25), None) is todo  # a city that named no priority area
+    # a fresh crawl has read no project page, so it has no idea where anything is: do not pretend otherwise
+    assert mb_crawl.prioritise(todo, {}, pri) is todo
+    assert mb_crawl.prioritise(todo, read_pages(19), pri) is todo  # 19 placed pincodes is still too few

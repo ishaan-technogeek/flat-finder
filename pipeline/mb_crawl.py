@@ -4,15 +4,18 @@ usage: python mb_crawl.py list <city>      # all list pages -> out/<city>/mb_ind
        python mb_crawl.py projects <city>  # every project page -> out/<city>/mb_projects.json
 <city> is a key in data/cities.json (default gurgaon).
 """
+import collections
 import gzip
 import hashlib
 import json
 import pathlib
+import statistics
 import sys
 import threading
 import time
 import urllib.request
 
+import geo
 import mb_parse
 
 ROOT = pathlib.Path(__file__).parent
@@ -152,6 +155,57 @@ def resume(f, index):
             [r for r in rows if r.get("url") not in urls])
 
 
+def place_by_pincode(done, least=3):
+    """Where each pincode sits, from the project pages this crawl has already read.
+
+    An index card carries a name, a locality and a pincode but no coordinates -- those are only on the
+    project page -- so the queue cannot be ordered by distance until something has been read. The pages
+    already in hand give it: the median position of the projects sharing a pincode. Hyderabad's first
+    9,986 pages placed 144 pincodes and 28,021 of its 28,101 cards, with half the projects inside 760 m
+    of their pincode's median and nine in ten inside 3.9 km. Coarse, which is all a 10 km bucket needs.
+    """
+    at = collections.defaultdict(list)
+    for r in done.values():
+        if r.get("pincode") and r.get("lat") is not None and r.get("lng") is not None:
+            at[r["pincode"]].append((r["lng"], r["lat"]))
+    return {k: (statistics.median(x for x, _ in v), statistics.median(y for _, y in v))
+            for k, v in at.items() if len(v) >= least}
+
+
+def prioritise(todo, done, pri):
+    """todo reordered so a city's priority area is read first. Nothing is dropped, only moved later.
+
+    A city names its area in data/cities.json: "priority": {"name": "HITEC City", "center": [lng, lat],
+    "km": 10}. Inside that radius, nearest first; then everything else, also nearest first, so the
+    boundary is a priority line and not a cliff; then the few cards no pincode could place. The output
+    file stays in index order either way -- save() writes it that way -- so this changes when a project
+    is read and nothing about what the build then makes of it.
+
+    A crawl with nothing read yet has nothing to sort by and keeps the index order; stop it and start it
+    again once a few hundred pages are in and the priority takes effect.
+    """
+    if not pri:
+        return todo
+    at = place_by_pincode(done)
+    if len(at) < 20:
+        print(f"  only {len(at)} pincodes placed so far: keeping index order", flush=True)
+        return todo
+    center = tuple(pri["center"])
+
+    def rank(p):
+        here = at.get(p.get("pincode"))
+        if here is None:
+            return (2, 0.0)  # unplaceable: read last, but still read
+        km = geo.dist_m(center, here) / 1000
+        return (0 if km <= pri["km"] else 1, km)
+
+    ranked = sorted(((rank(p), p) for p in todo), key=lambda t: t[0])
+    inside = sum(1 for r, _ in ranked if r[0] == 0)
+    print(f"  {inside} of {len(ranked)} unread projects are within {pri['km']} km of {pri['name']}: those "
+          f"first, nearest first, then the rest ({inside / 3600:.1f} h to clear the area at one a second)", flush=True)
+    return [p for _, p in ranked]
+
+
 def save(f, index, done, foreign):
     """The checkpoint, in index order, with the rows this crawl did not write last: build_city.dedupe
     keeps the first of two near-duplicates, which should be the crawled copy with the prices on it."""
@@ -165,6 +219,7 @@ def crawl_projects():
     todo = [p for p in index if p["url"] not in done]
     print(f"{len(index)} projects: {len(done)} already parsed, {len(todo)} to fetch"
           + (f", {len(foreign)} rows from another source kept" if foreign else ""), flush=True)
+    todo = prioritise(todo, done, CFG.get("priority"))
 
     def one(p):
         if stop.is_set():
