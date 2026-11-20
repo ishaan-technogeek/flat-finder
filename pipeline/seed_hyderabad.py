@@ -55,12 +55,20 @@ SUF = (r"apartment|appartment|apts|residency|residences|enclave|tower|heights|hi
 # Not a society even when the name looks like one.
 REJECT = (r"^\s*(block|a block|b block|c block|d block|plot|apt|flat|door|h\.?no)\b|^[\d\-/ ]+$|"
           r"hostel|paying guest|\bpg\b|bunglow|bungalow|mens |womens |book shop|medical|"
-          r"restaurant|function hall|kalyana|lodge")
+          r"restaurant|function hall|kalyana|lodge|"
+          # a mapper labelling their own front door, e.g. "Andy's House, Laxmi Towers": one dwelling, and a
+          # person's name has no business on a city map of societies
+          r"\b\w+'s house\b")
 # Tails that mark a phase or block of one society, not a separate society. OSM writes them every way there
 # is: "Block - A", "Block-C", "F-Block", "(Phase 2)", "Block - A, B, C &d".
+# Only singular "Tower" designates one: "Rajapushpa Regalia, Tower - A" is a tower of a society, while all 60
+# of the "... Towers" in the data are society names. Without the (?!s) guard the identifier swallowed that "s",
+# so "Ramky Towers" cleaned to "Ramky" - which no longer carries a society word, so the signal filter below
+# dropped it from the seed altogether. Aparna Towers went the same way; Aditya Empress Towers was renamed.
 TAIL = (r"\s*[-–,]?\s*\(?\s*\b(?:[a-z]\s*-?\s*(?:block|tower)"
         r"|block\s*-?\s*[a-z0-9]?(?:\s*[&,]\s*[a-z0-9]+)*"
-        r"|phase\s*-?\s*[ivx0-9]+|part\s*-?\s*[0-9]+|wing\s*-?\s*[a-z0-9]{1,2}|tower\s*-?\s*[a-z0-9]{1,3}"
+        r"|phase\s*-?\s*[ivx0-9]+|part\s*-?\s*[0-9]+|wing\s*-?\s*[a-z0-9]{1,2}"
+        r"|tower(?!s)\s*[-–]?\s*[a-z0-9]{1,3}"
         r"|sector\s*[0-9]+|[ivx]{1,4}|[0-9]{1,2})\s*\)?\s*$")
 FIX = [(r"\bappartments?\b", "apartments"), (r"\bapts?\b", "apartments"), (r"\bapartment\b", "apartments"),
        (r"\bres\b", ""), (r"\bco operative\b", "co-operative")]

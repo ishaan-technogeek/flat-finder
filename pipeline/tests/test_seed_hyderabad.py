@@ -22,8 +22,14 @@ def test_clean_strips_a_block_or_phase_however_osm_spelt_it():
 
 
 def test_clean_keeps_a_name_that_merely_ends_in_a_word_a_tail_uses():
+    # "Towers" is the society; only a separated identifier after it is one of its buildings
+    assert seed.clean("Lanco Hills Signature Towers") == "Lanco Hills Signature Towers"
+    assert seed.clean("Ramky Towers") == "Ramky Towers"  # became "Ramky", which the bare-developer rule dropped
+    assert seed.clean("Aditya Empress Towers") == "Aditya Empress Towers"
     assert seed.clean("Aparna Sarovar Zenith") == "Aparna Sarovar Zenith"
-    assert seed.clean("Lanco Hills Signature") == "Lanco Hills Signature"
+    assert seed.clean("Ramky Towers Block 3") == "Ramky Towers"
+    # singular "Tower" does designate one, so it still goes
+    assert seed.clean("Rajapushpa Regalia, Tower - A") == "Rajapushpa Regalia"
 
 
 def test_clean_normalises_spelling_and_case_without_shouting_initialisms():

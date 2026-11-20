@@ -1530,6 +1530,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-b43c3a41cb",
+"name": "R K Towers",
+"developer": null,
+"locality": "Begumpet",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1413209018",
+"lat": 17.440204,
+"lng": 78.463595,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-2279dc0845",
 "name": "RBI Staff Quarters",
 "developer": null,
@@ -2312,6 +2346,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-c8515111f4",
+"name": "Jains Salzburg Towers",
+"developer": null,
+"locality": "Budvel",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/790306303",
+"lat": 17.355963,
+"lng": 78.383721,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-f13497a35e",
 "name": "Lunetta Villas",
 "developer": null,
@@ -2856,6 +2924,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-ccae8bd02e",
+"name": "Revathi Towers",
+"developer": null,
+"locality": "Chaitanyapuri",
+"pincode": "500035",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/356539283",
+"lat": 17.372558,
+"lng": 78.540744,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-7cfa959db3",
 "name": "Sri Gayatri Nilayam",
 "developer": null,
@@ -2924,6 +3026,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-37502e28b1",
+"name": "Sai Tirumala And Bhaskara Towers",
+"developer": null,
+"locality": "Champapet",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1409690570",
+"lat": 17.346486,
+"lng": 78.523463,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-08024219a6",
 "name": "Ajay Apartments",
 "developer": null,
@@ -2946,6 +3082,40 @@
 "url": "https://www.openstreetmap.org/way/355712871",
 "lat": 17.504617,
 "lng": 78.318483,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-91cd661041",
+"name": "AkkiRaju Towers",
+"developer": null,
+"locality": "Chandanagar",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/733462400",
+"lat": 17.505319,
+"lng": 78.318764,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -3014,6 +3184,40 @@
 "url": "https://www.openstreetmap.org/way/1408789306",
 "lat": 17.504182,
 "lng": 78.31413,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-8f2e49a6c0",
+"name": "Dharmashastha Towers",
+"developer": null,
+"locality": "Chandanagar",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/355712842",
+"lat": 17.505232,
+"lng": 78.322046,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -3196,40 +3400,6 @@
 "rent_listings": []
 },
 {
-"mb_id": "seed-1152742a4d",
-"name": "SS Residency",
-"developer": null,
-"locality": "Chandanagar",
-"pincode": "500050",
-"status": null,
-"possession": null,
-"units": null,
-"towers": null,
-"acres": null,
-"price_min": null,
-"price_max": null,
-"prop_types": null,
-"brochure_url": null,
-"card_units": [],
-"images": [],
-"type_codes": [
-"10002"
-],
-"url": "https://www.openstreetmap.org/way/733439004",
-"lat": 17.505505,
-"lng": 78.318918,
-"configs": {
-"units": [],
-"by_bhk": {}
-},
-"rating_count": null,
-"ratings": {},
-"description": null,
-"amenities": [],
-"sale_listings": [],
-"rent_listings": []
-},
-{
 "mb_id": "seed-16e1c0ec41",
 "name": "Sai Priya Enclave",
 "developer": null,
@@ -3286,6 +3456,40 @@
 "url": "https://www.openstreetmap.org/way/1409686260",
 "lat": 17.499544,
 "lng": 78.316632,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-07d807c30e",
+"name": "Shubham Arcade Spurthy Towers",
+"developer": null,
+"locality": "Chandanagar",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1322068341",
+"lat": 17.501062,
+"lng": 78.321812,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -3366,8 +3570,8 @@
 "rent_listings": []
 },
 {
-"mb_id": "seed-c727690e12",
-"name": "Sri Srinivasa",
+"mb_id": "seed-8f902f2404",
+"name": "Sri Srinivasa Towers",
 "developer": null,
 "locality": "Chandanagar",
 "pincode": null,
@@ -3638,6 +3842,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-a12f8f3d92",
+"name": "Park Wood Towers",
+"developer": null,
+"locality": "Doolapally",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1133434469",
+"lat": 17.571188,
+"lng": 78.495054,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-6564dccea1",
 "name": "Prajay Gruhatara Apartments",
 "developer": null,
@@ -3694,6 +3932,40 @@
 "url": "https://www.openstreetmap.org/way/1410031709",
 "lat": 17.562697,
 "lng": 78.488215,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-53d96b4466",
+"name": "Vensai Towers",
+"developer": null,
+"locality": "Doolapally",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/184242040",
+"lat": 17.533197,
+"lng": 78.486356,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -4692,6 +4964,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-d86281c235",
+"name": "Ramky Towers",
+"developer": "Ramky",
+"locality": "Gachibowli",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/374411584",
+"lat": 17.445043,
+"lng": 78.365601,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-1d10ed823d",
 "name": "Sudeepthi Nilayam",
 "developer": null,
@@ -5020,6 +5326,40 @@
 "url": "https://www.openstreetmap.org/way/626861298",
 "lat": 17.530089,
 "lng": 78.42903,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-f857a44d22",
+"name": "VSR Celestial Towers",
+"developer": null,
+"locality": "Gajularamaram",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1409972726",
+"lat": 17.524279,
+"lng": 78.424995,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -5508,6 +5848,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-6c7c375dd2",
+"name": "Movie Towers",
+"developer": null,
+"locality": "Gandipet",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1120726018",
+"lat": 17.406788,
+"lng": 78.314659,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-58e5da250c",
 "name": "Pearl Villa",
 "developer": null,
@@ -5904,6 +6278,40 @@
 "url": "https://www.openstreetmap.org/way/75105247",
 "lat": 17.464255,
 "lng": 78.485675,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-5c39c97160",
+"name": "Sukrutha Varsha Towers",
+"developer": null,
+"locality": "Gunrock Enclave",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/356179474",
+"lat": 17.461329,
+"lng": 78.492434,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -6732,6 +7140,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-1ec38ed294",
+"name": "Ridge Towers",
+"developer": null,
+"locality": "Idpl",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1408663878",
+"lat": 17.489769,
+"lng": 78.452793,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-e2def9075e",
 "name": "Padma Residency",
 "developer": null,
@@ -6992,6 +7434,40 @@
 "url": "https://www.openstreetmap.org/way/650546360",
 "lat": 17.500419,
 "lng": 78.556409,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-dd78cf0c3c",
+"name": "Associated Towers",
+"developer": null,
+"locality": "Jeedimetla Village",
+"pincode": "500011",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/356203003",
+"lat": 17.48406,
+"lng": 78.480283,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -7548,6 +8024,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-b671e3d9d3",
+"name": "Surya Gayatri Towers",
+"developer": null,
+"locality": "KPHB Colony",
+"pincode": "500072",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/854848578",
+"lat": 17.487762,
+"lng": 78.390389,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-3256580720",
 "name": "Janapriya Apartments Complex",
 "developer": "Janapriya",
@@ -7910,6 +8420,40 @@
 "url": "https://www.openstreetmap.org/way/626592671",
 "lat": 17.420597,
 "lng": 78.352837,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-85472a5e62",
+"name": "HIG Towers",
+"developer": null,
+"locality": "Khajaguda",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/626614705",
+"lat": 17.416481,
+"lng": 78.376752,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -8772,6 +9316,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-8bccdb61d8",
+"name": "Aparna Towers",
+"developer": "Aparna",
+"locality": "Kondapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/895411202",
+"lat": 17.464986,
+"lng": 78.369406,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-5253bde2c6",
 "name": "Hitex Pride Apartments",
 "developer": null,
@@ -8896,6 +9474,40 @@
 "url": "https://www.openstreetmap.org/way/1345395943",
 "lat": 17.465359,
 "lng": 78.38301,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-8ba5e4bf1b",
+"name": "Meenakshi Towers",
+"developer": null,
+"locality": "Kondapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/331359464",
+"lat": 17.463224,
+"lng": 78.373685,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -9100,6 +9712,40 @@
 "url": "https://www.openstreetmap.org/way/1275376010",
 "lat": 17.473721,
 "lng": 78.368707,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-b204e48919",
+"name": "Surya Towers",
+"developer": null,
+"locality": "Kondapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/356027054",
+"lat": 17.467108,
+"lng": 78.372601,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -9860,6 +10506,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-03bdd5ce4b",
+"name": "Hima Sai Lake View Towers",
+"developer": null,
+"locality": "Lingampally",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1422235997",
+"lat": 17.467955,
+"lng": 78.310418,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-a74f46e0b6",
 "name": "Honer Aquantis",
 "developer": "Honer",
@@ -9894,8 +10574,8 @@
 "rent_listings": []
 },
 {
-"mb_id": "seed-2b517fc42f",
-"name": "Manjeera Diamond",
+"mb_id": "seed-14ce9008d1",
+"name": "Manjeera Diamond Towers",
 "developer": "Manjeera",
 "locality": "Lingampally",
 "pincode": null,
@@ -10574,6 +11254,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-f7955537da",
+"name": "Fortune Towers",
+"developer": null,
+"locality": "Madhapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/68907610",
+"lat": 17.439706,
+"lng": 78.390347,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-93b76a0981",
 "name": "Fresh Living Apartments",
 "developer": null,
@@ -11140,6 +11854,40 @@
 "url": "https://www.openstreetmap.org/way/748552909",
 "lat": 17.449269,
 "lng": 78.40109,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-febc1d0c2c",
+"name": "Sai Balaji Towers",
+"developer": null,
+"locality": "Madhapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/356244563",
+"lat": 17.436496,
+"lng": 78.395387,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -12648,6 +13396,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-5ed5d021ae",
+"name": "Garden Towers",
+"developer": null,
+"locality": "Masab Tank",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/357586188",
+"lat": 17.405128,
+"lng": 78.448586,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-72fdba1d70",
 "name": "Maphar Aasra Apartments",
 "developer": null,
@@ -13634,6 +14416,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-8347abce6f",
+"name": "ARK Towers",
+"developer": null,
+"locality": "Miyapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/626578916",
+"lat": 17.509371,
+"lng": 78.36665,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-691df110a7",
 "name": "Aditya Imperial Heights",
 "developer": null,
@@ -14110,6 +14926,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-b111a51d0f",
+"name": "Sairam Towers",
+"developer": null,
+"locality": "Miyapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1527250634",
+"lat": 17.487037,
+"lng": 78.353848,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-9d9099420a",
 "name": "Sarojini Nilayam Plot No 49 &",
 "developer": null,
@@ -14132,6 +14982,40 @@
 "url": "https://www.openstreetmap.org/way/1485381847",
 "lat": 17.487776,
 "lng": 78.373501,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-05ce6aeff0",
+"name": "Sree Hema Durga Towers",
+"developer": null,
+"locality": "Miyapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/846803492",
+"lat": 17.493443,
+"lng": 78.355256,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -14370,6 +15254,74 @@
 "url": "https://www.openstreetmap.org/way/626188259",
 "lat": 17.46743,
 "lng": 78.407697,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-18133ef436",
+"name": "Gyandeep Towers",
+"developer": null,
+"locality": "Moosarambagh",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1409112802",
+"lat": 17.376012,
+"lng": 78.515156,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-5150ca6c0d",
+"name": "Tirumala Towers",
+"developer": null,
+"locality": "Moosarambagh",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/357048321",
+"lat": 17.371007,
+"lng": 78.51855,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -14982,6 +15934,40 @@
 "url": "https://www.openstreetmap.org/way/608549360",
 "lat": 17.422207,
 "lng": 78.567421,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-d4f52346b5",
+"name": "A K Towers",
+"developer": null,
+"locality": "Nagaram",
+"pincode": "500083",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/386317509",
+"lat": 17.483011,
+"lng": 78.607605,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -15832,6 +16818,74 @@
 "url": "https://www.openstreetmap.org/way/1043473195",
 "lat": 17.518872,
 "lng": 78.376432,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-a62f5c1ebc",
+"name": "Annapurna Towers",
+"developer": null,
+"locality": "Nizampet",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/355676702",
+"lat": 17.520119,
+"lng": 78.376781,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-5dec0d5ffa",
+"name": "Gayatri Towers",
+"developer": null,
+"locality": "Nizampet",
+"pincode": "500090",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1043473194",
+"lat": 17.519444,
+"lng": 78.37694,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -17136,6 +18190,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-2f325852b4",
+"name": "Vince Towers",
+"developer": null,
+"locality": "Pragathi Nagar",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/355982718",
+"lat": 17.531658,
+"lng": 78.392034,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-cb31c666ec",
 "name": "Vindhya Lakeview Apartments",
 "developer": null,
@@ -17272,6 +18360,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-e033f6926f",
+"name": "Sai Balaji Towers",
+"developer": null,
+"locality": "Qutubullapur",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/relation/5346386",
+"lat": 17.520334,
+"lng": 78.44321,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-21f6f5ced8",
 "name": "Silver Springs Apartments",
 "developer": null,
@@ -17328,6 +18450,40 @@
 "url": "https://www.openstreetmap.org/way/1408652753",
 "lat": 17.436307,
 "lng": 78.649912,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-44376f91c4",
+"name": "Galaxy Towers",
+"developer": null,
+"locality": "Rajeev Gruha Kalpa",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1408640799",
+"lat": 17.438561,
+"lng": 78.648004,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -17816,6 +18972,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-0b2fa07e61",
+"name": "Vishnu Veda Towers",
+"developer": null,
+"locality": "SR Nagar",
+"pincode": "500038",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/356465565",
+"lat": 17.445214,
+"lng": 78.447047,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-fd2cf2ab78",
 "name": "Susrutha Apartments",
 "developer": null,
@@ -18076,6 +19266,40 @@
 "url": "https://www.openstreetmap.org/way/265608003",
 "lat": 17.408251,
 "lng": 78.467929,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-1e8f919067",
+"name": "Paramount Towers",
+"developer": null,
+"locality": "Saifabad",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/574090401",
+"lat": 17.400622,
+"lng": 78.464697,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -18530,6 +19754,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-2dbb715706",
+"name": "Vishaal Towers",
+"developer": null,
+"locality": "Satavahana Nagar",
+"pincode": "500085",
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1420118592",
+"lat": 17.502021,
+"lng": 78.393267,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-6092ab17c4",
 "name": "Vrushabaradri Apartments",
 "developer": null,
@@ -18564,40 +19822,6 @@
 "rent_listings": []
 },
 {
-"mb_id": "seed-1362530540",
-"name": "Aditya Empress",
-"developer": null,
-"locality": "Shaikpet",
-"pincode": null,
-"status": null,
-"possession": null,
-"units": null,
-"towers": null,
-"acres": null,
-"price_min": null,
-"price_max": null,
-"prop_types": null,
-"brochure_url": null,
-"card_units": [],
-"images": [],
-"type_codes": [
-"10002"
-],
-"url": "https://www.openstreetmap.org/way/1370559375",
-"lat": 17.405039,
-"lng": 78.402924,
-"configs": {
-"units": [],
-"by_bhk": {}
-},
-"rating_count": null,
-"ratings": {},
-"description": null,
-"amenities": [],
-"sale_listings": [],
-"rent_listings": []
-},
-{
 "mb_id": "seed-c46e9f796b",
 "name": "Aditya Empress Park",
 "developer": null,
@@ -18620,6 +19844,40 @@
 "url": "https://www.openstreetmap.org/way/1370559374",
 "lat": 17.403599,
 "lng": 78.40162,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-a45d3a5899",
+"name": "Aditya Empress Towers",
+"developer": null,
+"locality": "Shaikpet",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/1370559375",
+"lat": 17.405039,
+"lng": 78.402924,
 "configs": {
 "units": [],
 "by_bhk": {}
@@ -19992,6 +21250,40 @@
 "rent_listings": []
 },
 {
+"mb_id": "seed-593e8d0c55",
+"name": "KK Towers",
+"developer": null,
+"locality": "Vengal Rao Nagar",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/310176752",
+"lat": 17.43612,
+"lng": 78.434983,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
 "mb_id": "seed-17687ae59d",
 "name": "Vijayadurga Residency",
 "developer": null,
@@ -20014,6 +21306,40 @@
 "url": "https://www.openstreetmap.org/way/255362751",
 "lat": 17.442458,
 "lng": 78.432728,
+"configs": {
+"units": [],
+"by_bhk": {}
+},
+"rating_count": null,
+"ratings": {},
+"description": null,
+"amenities": [],
+"sale_listings": [],
+"rent_listings": []
+},
+{
+"mb_id": "seed-edf31d64c5",
+"name": "Vora Towers",
+"developer": null,
+"locality": "Vengal Rao Nagar",
+"pincode": null,
+"status": null,
+"possession": null,
+"units": null,
+"towers": null,
+"acres": null,
+"price_min": null,
+"price_max": null,
+"prop_types": null,
+"brochure_url": null,
+"card_units": [],
+"images": [],
+"type_codes": [
+"10002"
+],
+"url": "https://www.openstreetmap.org/way/310176293",
+"lat": 17.436826,
+"lng": 78.435829,
 "configs": {
 "units": [],
 "by_bhk": {}
