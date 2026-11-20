@@ -4,7 +4,7 @@ import { addBaseLayers, addSocietyLayers, BASE_MODES, createMap, OVERVIEW, setBa
 import { searchSocieties } from './search.js';
 import { createFeed } from './feed.js';
 import { AMENITY_KEYS, DEFAULT_CRITERIA, NEAR, RANK, feetLabel, formatINR, matchSociety, matchUnit, priceFor, roomPasses } from './filters.js';
-import { esc, href } from './html.js';
+import { esc, gmapsUrl, href } from './html.js';
 
 const $ = (id) => document.getElementById(id);
 const mobile = matchMedia('(max-width: 700px)').matches;
@@ -428,14 +428,16 @@ function renderCard(s) {
     return `<span class="hit">${esc(AMEN_LABELS[k] || k)}: ${esc(f.value)} (${cite})</span>`;
   }).join('');
   const amen = s.amenities.map((a) => `<span class="${[...want].some((w) => a.toLowerCase().includes(w)) ? 'hit' : ''}">${esc(a)}</span>`).join('');
-  const plans = Object.entries(s.plan_links || {}).map(([b, urls]) => urls.filter(href).slice(0, 2).map((u, i, kept) => `<a href="${href(u)}" target="_blank" rel="noopener">${b} BHK plan${kept.length > 1 ? ' ' + (i + 1) : ''}</a>`).join(' ')).join(' ');
-  const issue = `${REPO}/issues/new?title=${encodeURIComponent('Research: ' + s.name)}&body=${encodeURIComponent(`Please verify room sizes and amenities for ${s.name} (${s.locality || ''}).\n\n${s.url ? `Portal page: ${s.url}\n` : ''}${s.brochure_url ? 'Brochure: ' + s.brochure_url : ''}`)}`;
+  const plans = Object.entries(d?.plan_links || {}).map(([b, urls]) => urls.filter(href).slice(0, 2).map((u, i, kept) => `<a href="${href(u)}" target="_blank" rel="noopener">${b} BHK plan${kept.length > 1 ? ' ' + (i + 1) : ''}</a>`).join(' ')).join(' ');
+  const issue = `${REPO}/issues/new?title=${encodeURIComponent('Research: ' + s.name)}&body=${encodeURIComponent(`Please verify room sizes and amenities for ${s.name} (${s.locality || ''}).\n\n${s.url ? `Portal page: ${s.url}\n` : ''}${d?.brochure_url ? 'Brochure: ' + d.brochure_url : ''}`)}`;
   const facts2 = [s.towers && `${s.towers} towers`, s.units && `${Number(s.units).toLocaleString()} units`, s.acres && `${s.acres} acres`, s.status, s.possession && `possession ${s.possession}`].filter(Boolean).join(' · ');
   const counts = (s.sale_count || s.rent_count) ? `${(s.sale_count || 0).toLocaleString()} for sale · ${(s.rent_count || 0).toLocaleString()} for rent now` : 'No live listings';
-  const parts = s.score_parts || {};
-  const score = s.score != null ? `<div class="score"><div class="big">${s.score}<small>/10</small></div><div class="parts">
+  const parts = d?.score_parts;
+  // the breakdown arrives with the details file, a moment after the score itself: no parts, no row of
+  // them, rather than three parts reading "undefined" until it lands
+  const score = s.score != null ? `<div class="score"><div class="big">${s.score}<small>/10</small></div>${parts ? `<div class="parts">
       ${parts.residents != null ? `<span>Residents <b>${parts.residents}</b></span>` : '<span class="fine">No resident ratings yet</span>'}<span>Nearby <b>${parts.nearby}</b></span><span>Amenities <b>${parts.amenities}</b></span>
-      <span class="fine">Flat Finder score: residents' rating 50%, what is nearby 30%, amenities 20%</span></div></div>` : '';
+      <span class="fine">Flat Finder score: residents' rating 50%, what is nearby 30%, amenities 20%</span></div>` : ''}</div>` : '';
   const near = s.nearby || {};
   const nearRows = [['park', 'Park'], ['metro', 'Metro'], ['rail', 'Rail station'], ['school', 'School'], ['hospital', 'Hospital'], ['shopping', 'Mall or supermarket']]
     .filter(([k]) => near[k]).map(([k, l]) => `<div><span>${l}</span><b>${metres(near[k].m)}</b><small>${esc(near[k].name || '')}${near[k].n > 1 ? ` · ${near[k].n} within 1 km` : ''}</small></div>`).join('');
@@ -453,7 +455,7 @@ function renderCard(s) {
     </div>
     ${photos}
     <h2>${esc(s.name)}</h2>
-    <div class="meta">${esc(s.developer || '')}${s.locality ? ' · ' + esc(s.locality) : ''} · ${esc(s.config_text || s.kind)}${s.kind_inferred ? ' <span class="fine">(type inferred from name)</span>' : ''}</div>
+    <div class="meta">${esc(s.developer || '')}${s.locality ? ' · ' + esc(s.locality) : ''} · ${esc(d?.config_text || s.kind)}${s.kind_inferred ? ' <span class="fine">(type inferred from name)</span>' : ''}</div>
     <div class="meta">${esc(facts2)}</div>
     ${score}
     <div class="meta">${s.rating ? `<span class="stars">★ ${s.rating.toFixed(1)}</span> ${s.rating_count || 0} resident ratings · ${s.review_count || 0} reviews · ` : ''}${counts}</div>
@@ -468,10 +470,10 @@ function renderCard(s) {
     ${facts || amen ? `<h4>Amenities (${s.amenities.length})</h4><div class="amen">${facts}${amen}</div>` : ''}
     ${about}
     <div class="links">
-      ${href(s.gmaps) ? `<a class="btnlink" href="${href(s.gmaps)}" target="_blank" rel="noopener">Google Maps and reviews</a>` : ''}
+      <a class="btnlink" href="${href(gmapsUrl(s.name, s.locality, data.city.name))}" target="_blank" rel="noopener">Google Maps and reviews</a>
       <a class="btnlink" href="https://www.google.com/maps/dir/?api=1&destination=${Number(s.lat)},${Number(s.lng)}" target="_blank" rel="noopener">Directions</a>
       ${sourceLink(s.url)}
-      ${href(s.brochure_url) ? `<a href="${href(s.brochure_url)}" target="_blank" rel="noopener">Brochure</a>` : ''}
+      ${href(d?.brochure_url) ? `<a href="${href(d.brochure_url)}" target="_blank" rel="noopener">Brochure</a>` : ''}
       ${plans}
       ${!s.verified ? `<a href="${esc(issue)}" target="_blank" rel="noopener">Request a room check →</a>` : ''}
     </div>
@@ -598,7 +600,7 @@ function exportResults() {
   const rows = ranked().map((s) => {
     const p = priceFor(s, crit.mode, crit.bhk);
     return [s.name, s.locality, states.get(s.id), s.kind, p?.value, p ? p.estimated : '', s.sale_count, s.rent_count, s.score, s.rating, s.towers, s.units,
-      s.nearby?.park?.m, s.nearby?.metro?.m, s.url, s.gmaps, `${location.origin}${BASE}?city=${cityId}&open=${s.id}`];
+      s.nearby?.park?.m, s.nearby?.metro?.m, s.url, gmapsUrl(s.name, s.locality, data.city.name), `${location.origin}${BASE}?city=${cityId}&open=${s.id}`];
   });
   const blob = new Blob([[cols, ...rows].map((r) => r.map(q).join(',')).join('\n')], { type: 'text/csv' });
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `flat-finder-${cityId}-${crit.mode}-results.csv` });

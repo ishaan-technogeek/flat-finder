@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { esc, href } from './html.js';
+import { esc, gmapsUrl, href } from './html.js';
 
 describe('esc', () => {
   it('closes the ways out of an attribute or a text node', () => {
@@ -32,5 +32,22 @@ describe('href', () => {
     expect(href(null)).toBe('');
     expect(href(undefined)).toBe('');
     expect(href({})).toBe('');
+  });
+});
+
+describe('gmapsUrl', () => {
+  // These are the exact strings pipeline/tests/test_build.py asserts for the same three societies: the
+  // link is derived here and published in the CSV from there, so the two encoders have to agree.
+  it('searches for the society by name, locality and city', () => {
+    expect(gmapsUrl('DLF Magnolias', 'DLF Phase 5', 'Gurugram'))
+      .toBe('https://www.google.com/maps/search/?api=1&query=DLF%20Magnolias%2C%20DLF%20Phase%205%2C%20Gurugram');
+  });
+  it("keeps what a url encoder keeps and escapes the rest, apostrophes and slashes included", () => {
+    expect(gmapsUrl("King's Court A/B", 'Sector 54 & 55', 'Gurugram'))
+      .toBe("https://www.google.com/maps/search/?api=1&query=King's%20Court%20A%2FB%2C%20Sector%2054%20%26%2055%2C%20Gurugram");
+  });
+  it('a society with no locality still gets a city-wide search', () => {
+    expect(gmapsUrl('My Home Bhooja', null, 'Hyderabad'))
+      .toBe('https://www.google.com/maps/search/?api=1&query=My%20Home%20Bhooja%2C%20%2C%20Hyderabad');
   });
 });

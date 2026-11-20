@@ -1,6 +1,7 @@
 // Flat Finder MCP server (Streamable HTTP, JSON responses), so people can add Flat Finder to Claude as a connector.
 // Runs as a Cloudflare Pages Function at /mcp and reads the same static data the website uses.
 import { DEFAULT_CRITERIA, NEAR, feetLabel, formatINR, hasAmenity, matchSociety, priceFor, unitSize } from '../src/filters.js';
+import { gmapsUrl } from '../src/html.js';
 import { searchSocieties } from '../src/search.js';
 
 const PROTOCOL = '2025-06-18';
@@ -210,7 +211,9 @@ async function details(env, origin, id, sid) {
   return detailsCache.data[sid] || null;
 }
 
-function detail(s, extra, link) {
+// score_parts, brochure_url and the rest of the card's own fields live in <city>-details.json, which
+// this already reads; the Google Maps link is derived, the one way it is built everywhere.
+function detail(s, extra, link, cityName) {
   return {
     name: s.name, developer: s.developer, locality: s.locality, lat: s.lat, lng: s.lng, type: s.kind, status: s.status, possession: s.possession, rera: s.rera_id,
     towers: s.towers, units: s.units, acres: s.acres, verified: s.verified, note: s.note,
@@ -220,11 +223,12 @@ function detail(s, extra, link) {
       read_by_ai_from_plan: u.ai ? { narrowest_bedroom: u.ai.min_short != null ? feetLabel(u.ai.min_short) : null,
         every_bedroom_long_side_at_least: u.ai.long_lb != null ? feetLabel(u.ai.long_lb) : null, every_bedroom_area_at_least_sqft: u.ai.area_lb } : null,
       source: u.source, page: u.page })),
-    prices: s.prices, score: s.score, score_parts: s.score_parts, resident_rating: s.rating, rating_count: s.rating_count,
+    prices: s.prices, score: s.score, score_parts: extra?.score_parts || null, resident_rating: s.rating, rating_count: s.rating_count,
     ratings_by_category: extra?.ratings || null,
     reviews: (extra?.reviews || []).slice(0, 8).map((r) => ({ title: r.title, text: r.text, date: r.date, by: r.by })),
     description: extra?.description || null,
-    nearby: s.nearby, amenities: s.amenities, brochure: s.brochure_url, source_url: s.url, google_maps: s.gmaps, flat_finder: link(s.id),
+    nearby: s.nearby, amenities: s.amenities, brochure: extra?.brochure_url || null, source_url: s.url,
+    google_maps: gmapsUrl(s.name, s.locality, cityName), flat_finder: link(s.id),
   };
 }
 
@@ -287,7 +291,7 @@ async function callTool(name, args, env, origin) {
   const find = (n) => searchSocieties(data.societies, n, 1)[0];
   if (name === 'get_society') {
     const s = find(args.name);
-    return s ? detail(s, await details(env, origin, id, s.id), link) : { error: `No society found for "${args.name}"` };
+    return s ? detail(s, await details(env, origin, id, s.id), link, data.city.name) : { error: `No society found for "${args.name}"` };
   }
   if (name === 'compare_societies') {
     const crit = { ...structuredClone(DEFAULT_CRITERIA), mode: args.mode || 'buy' };

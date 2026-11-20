@@ -25,6 +25,11 @@ GENERIC = {"the", "of", "at", "in", "sector", "residency", "residences", "homes"
            "apartments", "apartment", "towers", "tower", "heights", "city", "phase", "park", "estate",
            "floors", "society", "cghs", "group", "housing", "and", "by", "new", "greens", "green", "plaza"}
 TOWER_H = 55.0  # visual default height (m) for generated apartment towers; shapes are not data
+# Per-society keys the first paint does not need, written to <city>-details.json and fetched when a card
+# opens. The first five are the long text; the next four are read by the card renderer and by nothing
+# else -- on a city the size of Hyderabad they are 8.2 MB of the file every visitor waits for.
+DETAIL_KEYS = ("reviews", "description", "trend", "ratings", "images",
+               "plan_links", "score_parts", "config_text", "brochure_url")
 PAD = 0.15  # the portal puts some projects just outside the city bbox (Sohna for Gurugram); keep them
 # A city whose bbox was drawn deliberately can say "pad": 0 instead: 0.15 degrees is ~17 km on every side, which
 # for a metro the size of Hyderabad reaches past the outer ring road into towns nobody searching the city means.
@@ -184,6 +189,17 @@ def dedupe(projects):
     return [p for _, p in sorted(kept, key=lambda t: t[0])]  # back into the order they arrived in
 
 
+def gmaps_url(name, locality, city):
+    """A Google Maps search for one society. Not written to the city file: see DETAIL_KEYS below.
+
+    safe="!~*'()" is the one set of characters encodeURIComponent leaves alone, so this and
+    web/src/html.js gmapsUrl() produce the same bytes for the same society. The default safe="/" does
+    not, and the CSV column is published, so the two would have drifted apart silently.
+    """
+    return "https://www.google.com/maps/search/?api=1&query=" + urllib.parse.quote(
+        f"{name}, {locality or ''}, {city}", safe="!~*'()")
+
+
 def portal_units(p):
     units = []
     for u in (p.get("configs") or {}).get("units", []) or p.get("card_units") or []:
@@ -337,7 +353,7 @@ def main(city="gurgaon"):
              "ratings": p.get("ratings") or {}, "reviews": p.get("reviews") or [], "locality_rating": p.get("locality_rating"),
              "sale_count": p.get("sale_count"), "rent_count": p.get("rent_count"), "psf_now": p.get("psf_now"),
              "trend": p.get("trend") or [], "description": p.get("description"),
-             "gmaps": "https://www.google.com/maps/search/?api=1&query=" + urllib.parse.quote(f"{p['name']}, {p.get('locality') or ''}, {cfg['name']}"),
+             "gmaps": gmaps_url(p["name"], p.get("locality"), cfg["name"]),
              "prices": pricing.listing_stats(p)}
         if s["towers"] and s["towers"] > 60:  # portal typo (e.g. 1500 towers): not plausible, drop it
             s["towers"] = None
@@ -533,11 +549,12 @@ def main(city="gurgaon"):
             "societies": societies, "events": events}
     details = {}
     for s in societies:  # heavy per-society text, loaded only when a card opens
-        details[s["id"]] = {k: s.pop(k) for k in ("reviews", "description", "trend", "ratings", "images")}
+        details[s["id"]] = {k: s.pop(k) for k in DETAIL_KEYS}
+    gmaps = {s["id"]: s.pop("gmaps") for s in societies}  # derived in the browser; see gmaps_url
     (WEB / f"{city}.json").write_text(json.dumps(doc, separators=(",", ":")))
     (WEB / f"{city}-details.json").write_text(json.dumps(details, separators=(",", ":")))
     for s in societies:
-        s.update(details[s["id"]])
+        s.update(details[s["id"]], gmaps=gmaps[s["id"]])
     write_csv(WEB / f"{city}-societies.csv", WEB / f"{city}-units.csv", societies)
     for f in shapes:
         f["geometry"]["coordinates"] = [[[round(x, 5), round(y, 5)] for x, y in r] for r in f["geometry"]["coordinates"]]

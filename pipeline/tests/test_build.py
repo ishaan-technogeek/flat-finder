@@ -70,6 +70,17 @@ def test_marks_reads_only_the_part_tokens_drops():
     assert build_city.marks("Heritage One") == set()  # "one" is a word here, not a phase number
 
 
+def test_gmaps_url_matches_the_one_the_browser_builds():
+    # the same three societies as web/src/html.test.js, asserting the same bytes: the browser derives
+    # this link and write_csv publishes it, so the two encoders have to stay in step
+    assert build_city.gmaps_url("DLF Magnolias", "DLF Phase 5", "Gurugram") == \
+        "https://www.google.com/maps/search/?api=1&query=DLF%20Magnolias%2C%20DLF%20Phase%205%2C%20Gurugram"
+    assert build_city.gmaps_url("King's Court A/B", "Sector 54 & 55", "Gurugram") == \
+        "https://www.google.com/maps/search/?api=1&query=King's%20Court%20A%2FB%2C%20Sector%2054%20%26%2055%2C%20Gurugram"
+    assert build_city.gmaps_url("My Home Bhooja", None, "Hyderabad") == \
+        "https://www.google.com/maps/search/?api=1&query=My%20Home%20Bhooja%2C%20%2C%20Hyderabad"
+
+
 def test_kind_of():
     assert build_city.kind_of({"config_text": "2, 3, 4 BHK Multistorey Apartments"}) == "apartment"
     assert build_city.kind_of({"config_text": "Residential Plot"}) == "plot"
