@@ -1,3 +1,5 @@
-name = "flat-finder"
+# This fork deploys to its own Pages project. Keeping upstream's "flat-finder" would aim a deploy from this
+# clone at their site, which is theirs to publish, not ours.
+name = "hyd-flat-finder"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-08-01"
