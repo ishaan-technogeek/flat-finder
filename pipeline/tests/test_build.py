@@ -26,6 +26,20 @@ def test_dedupe_merges_phases_close_by():
     assert len(out) == 2 and out[0]["merged"] == ["b"]
 
 
+def test_dedupe_keeps_arrival_order_and_leaves_a_wholly_generic_name_alone():
+    rows = [{"name": "Heritage One", "lng": 77.0890, "lat": 28.4034, "url": "h1"},
+            {"name": "DLF The Primus", "lng": 77.0500, "lat": 28.4100, "url": "p1"},
+            {"name": "Heritage One", "lng": 77.0891, "lat": 28.4021, "url": "h2"},  # ~144 m from h1
+            {"name": "The Towers", "lng": 77.0600, "lat": 28.4200, "url": "t1"},
+            {"name": "The Towers", "lng": 77.0600, "lat": 28.4200, "url": "t2"}]
+    out = build_city.dedupe(rows)
+    # grouping by name must not reorder the city: the web JSON and both CSVs are written in this order
+    assert [p["url"] for p in out] == ["h1", "p1", "t1", "t2"]
+    assert out[0]["merged"] == ["h2"]
+    # "The Towers" is generic words only, so there is no name left to match on and neither one is merged away
+    assert build_city.tokens("The Towers") == set()
+
+
 def test_kind_of():
     assert build_city.kind_of({"config_text": "2, 3, 4 BHK Multistorey Apartments"}) == "apartment"
     assert build_city.kind_of({"config_text": "Residential Plot"}) == "plot"
