@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { linkFor, parseArgs, parseFeet, parsePrice, search } from './flatfinder.mjs';
 
@@ -24,6 +24,14 @@ it('links to the city the data came from, not the one --city defaulted to', () =
   expect(linkFor({ city: { id: 'hyderabad' } }, s, 'gurgaon')).toContain('?city=hyderabad&open=sseed-1f2f824bd8');
   expect(linkFor({ city: { id: 'gurgaon' } }, { id: 's123' }, 'gurgaon')).toContain('?city=gurgaon&open=s123');
   expect(linkFor({}, s, 'gurgaon')).toContain('?city=gurgaon');  // older data files carry no id
+});
+
+it('FF_SITE moves where it reads and where its links point', async () => {
+  vi.stubEnv('FF_SITE', 'http://localhost:4173/');
+  vi.resetModules(); // SITE is read once, at import
+  const fresh = await import('./flatfinder.mjs?ff-site');
+  expect(fresh.linkFor({ city: { id: 'hyderabad' } }, { id: 's1' }, 'gurgaon')).toBe('http://localhost:4173/?city=hyderabad&open=s1'); // one slash, not two
+  vi.unstubAllEnvs();
 });
 
 it('reads monthly rent', () => {

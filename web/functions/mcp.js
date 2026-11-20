@@ -157,7 +157,7 @@ function nearbyOut(s) {
   return Object.fromEntries(Object.entries(s.nearby || {}).map(([k, v]) => [k, v?.m != null ? `${v.m} m${v.name ? ` (${v.name})` : ''}` : null]));
 }
 
-function summary(s, st, crit, d, allAmenities, site) {
+function summary(s, st, crit, d, allAmenities, link) {
   return {
     name: s.name, locality: s.locality, verdict: st, type: s.kind, status: s.status, possession: s.possession, developer: s.developer,
     rooms_checked: s.verified ? 'by hand' : s.ai_read ? 'AI-read floor plans' : 'no',
@@ -167,7 +167,7 @@ function summary(s, st, crit, d, allAmenities, site) {
     nearby: nearbyOut(s),
     amenities: allAmenities ? s.amenities : KEY_AMENITIES.filter((k) => hasAmenity(s, k)),
     towers: s.towers, units: s.units, acres: s.acres,
-    link: `${site}/?open=${s.id}`,
+    link: link(s.id),
   };
 }
 
@@ -210,7 +210,7 @@ async function details(env, origin, id, sid) {
   return detailsCache.data[sid] || null;
 }
 
-function detail(s, extra, site) {
+function detail(s, extra, link) {
   return {
     name: s.name, developer: s.developer, locality: s.locality, lat: s.lat, lng: s.lng, type: s.kind, status: s.status, possession: s.possession, rera: s.rera_id,
     towers: s.towers, units: s.units, acres: s.acres, verified: s.verified, note: s.note,
@@ -224,7 +224,7 @@ function detail(s, extra, site) {
     ratings_by_category: extra?.ratings || null,
     reviews: (extra?.reviews || []).slice(0, 8).map((r) => ({ title: r.title, text: r.text, date: r.date, by: r.by })),
     description: extra?.description || null,
-    nearby: s.nearby, amenities: s.amenities, brochure: s.brochure_url, magicbricks: s.url, google_maps: s.gmaps, flat_finder: `${site}/?open=${s.id}`,
+    nearby: s.nearby, amenities: s.amenities, brochure: s.brochure_url, source_url: s.url, google_maps: s.gmaps, flat_finder: link(s.id),
   };
 }
 
@@ -232,6 +232,10 @@ async function callTool(name, args, env, origin) {
   const id = args.city || CITY.default;
   const site = origin || SITE; // whatever host served this request: custom domain, preview deploy or a local wrangler
   const data = await city(env, origin, id);
+  // The city goes in the link. Without it every link opened whichever city the site lands on, and the
+  // society id belongs to one city only, so a Hyderabad result pointed at a Gurugram map and opened
+  // nothing. The id comes from the data file rather than the argument, which is also what the CLI does.
+  const link = (sid) => `${site}/?city=${encodeURIComponent(data.city.id || id)}&open=${encodeURIComponent(sid)}`;
   if (name === 'search_societies' || name === 'breakdown') {
     const crit = criteria(args);
     const hits = filtered(data, args, crit);
@@ -265,7 +269,7 @@ async function callTool(name, args, env, origin) {
     const offset = Math.max(0, args.offset || 0), limit = Math.min(args.limit || 25, 200);
     return { city: data.city.name, total: hits.length, counts, offset, returned: Math.min(limit, Math.max(0, hits.length - offset)), has_more: offset + limit < hits.length,
       how_to_read: 'verdict: match = bedrooms read from floor plans and all pass, or no room filter was used; likely = rooms read so far pass; probable = plans unread, estimated from unit size. Societies without room data are left out under room filters. by_bhk prices: median of live listings with range and count, or "estimate" when there are none. A price with "flag" is what the listing says but our checks think it is a typo: say so, and prefer the estimate. nearby: distance to the closest place of each kind.',
-      results: hits.slice(offset, offset + limit).map(([s, st, d]) => summary(s, st, crit, d, args.include_all_amenities, site)) };
+      results: hits.slice(offset, offset + limit).map(([s, st, d]) => summary(s, st, crit, d, args.include_all_amenities, link)) };
   }
   if (name === 'list_localities') {
     const m = new Map();
@@ -283,11 +287,11 @@ async function callTool(name, args, env, origin) {
   const find = (n) => searchSocieties(data.societies, n, 1)[0];
   if (name === 'get_society') {
     const s = find(args.name);
-    return s ? detail(s, await details(env, origin, id, s.id), site) : { error: `No society found for "${args.name}"` };
+    return s ? detail(s, await details(env, origin, id, s.id), link) : { error: `No society found for "${args.name}"` };
   }
   if (name === 'compare_societies') {
     const crit = { ...structuredClone(DEFAULT_CRITERIA), mode: args.mode || 'buy' };
-    return { societies: (args.names || []).slice(0, 10).map((n) => { const s = find(n); return s ? summary(s, s.verified ? 'verified' : 'portal data', crit, null, true, site) : { name: n, error: 'not found' }; }) };
+    return { societies: (args.names || []).slice(0, 10).map((n) => { const s = find(n); return s ? summary(s, s.verified ? 'verified' : 'portal data', crit, null, true, link) : { name: n, error: 'not found' }; }) };
   }
   throw new Error(`Unknown tool ${name}`);
 }
