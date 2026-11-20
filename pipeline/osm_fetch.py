@@ -15,6 +15,7 @@ OUT = ROOT / "out"
 CITIES = json.loads((ROOT.parent / "data" / "cities.json").read_text())
 CITY = next((a for a in sys.argv[1:] if a in CITIES), "gurgaon")
 BBOX = tuple(CITIES[CITY]["bbox"])  # south, west, north, east
+TILES = int(CITIES[CITY].get("tiles") or 1)  # split the buildings query when one bbox is too big for Overpass
 OUT = OUT / CITY
 CACHE = CACHE / CITY
 MIRRORS = [
@@ -41,6 +42,30 @@ def overpass(query, name):
             print("mirror failed", url, e, flush=True)
             time.sleep(10)
     raise SystemExit("all Overpass mirrors failed")
+
+
+def tile_bboxes(bbox, n):
+    """Split a bbox into an n x n grid. One query for a city the size of Hyderabad times out."""
+    s, w, north, e = bbox
+    dy, dx = (north - s) / n, (e - w) / n
+    return [(s + i * dy, w + j * dx, s + (i + 1) * dy, w + (j + 1) * dx) for i in range(n) for j in range(n)]
+
+
+def building_elements():
+    """Every building way in the city bbox. Tiles are cached separately so a failure only repeats one tile."""
+    tiles = tile_bboxes(BBOX, TILES)
+    seen, els = set(), []
+    for i, (s, w, n, e) in enumerate(tiles):
+        # keep the original cache name for untiled cities so their cached response is still reused
+        name = "buildings" if len(tiles) == 1 else f"buildings-{i:02d}"
+        data = overpass(f'[out:json][timeout:280];way["building"]({s},{w},{n},{e});out geom;', name)
+        for el in data["elements"]:
+            if el["id"] not in seen:  # a way on a tile edge comes back in both tiles
+                seen.add(el["id"])
+                els.append(el)
+        if len(tiles) > 1:
+            print(f"tile {i + 1}/{len(tiles)}: {len(els)} buildings so far", flush=True)
+    return els
 
 
 def _pts(geom):
@@ -102,9 +127,8 @@ def main():
     (OUT / "osm_areas.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
     print("areas", len(feats))
 
-    blds = overpass(f'[out:json][timeout:280];way["building"]{bb};out geom;', "buildings")
     bf = []
-    for el in blds["elements"]:
+    for el in building_elements():
         if "geometry" not in el:
             continue
         r = _pts(el["geometry"])

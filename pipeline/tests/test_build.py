@@ -57,6 +57,30 @@ def test_infer_kind_from_name():
     assert build_city.kind_of({"name": "Ashiana Villas"}) == "villa~"
 
 
+def test_in_city_uses_the_configured_bbox():
+    gurgaon = {"bbox": [28.33, 76.88, 28.55, 77.16]}
+    hyderabad = {"bbox": [17.20, 78.20, 17.65, 78.70]}
+    assert build_city.in_city({"lat": 28.4027, "lng": 77.0891}, gurgaon)
+    assert build_city.in_city({"lat": 17.4401, "lng": 78.3489}, hyderabad)  # Gachibowli
+    # every city used to be filtered against Gurugram's box, so no other city had any project on the map
+    assert not build_city.in_city({"lat": 17.4401, "lng": 78.3489}, gurgaon)
+    assert not build_city.in_city({"lat": 28.4027, "lng": 77.0891}, hyderabad)
+    assert not build_city.in_city({"lat": None, "lng": None}, gurgaon)
+
+
+def test_in_city_pad_keeps_the_surrounding_district():
+    gurgaon = {"bbox": [28.33, 76.88, 28.55, 77.16]}
+    assert build_city.in_city({"lat": 28.1901, "lng": 77.1003}, gurgaon)  # Sohna, outside the bbox
+    assert not build_city.in_city({"lat": 27.90, "lng": 77.1003}, gurgaon)  # well beyond the pad
+
+
+def test_city_tokens_never_count_towards_a_name_match():
+    assert "gurugram" in build_city.city_tokens("gurgaon", {"name": "Gurugram"})
+    assert "gurgaon" in build_city.city_tokens("gurgaon", {"name": "Gurugram"})
+    cfg = {"name": "Hyderabad", "tokens": ["Secunderabad", "HITEC"]}
+    assert {"hyderabad", "secunderabad", "hitec"} <= build_city.city_tokens("hyderabad", cfg)
+
+
 def test_match_verified_needs_whole_name_and_sector():
     ps = [{"mb_id": 1, "name": "M3M", "locality": "Sector 65"},
           {"mb_id": 2, "name": "M3M Heights", "locality": "Sector 65"},
