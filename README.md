@@ -64,6 +64,9 @@ npx github:ishaan-technogeek/flat-finder --city hyderabad --type apartment --nea
 # data
 cd pipeline
 python3 mb_crawl.py list gurgaon && python3 mb_crawl.py projects gurgaon   # polite, cached, resumable
+
+# a city of 28,101 projects takes hours, so run it detached behind a log that rolls instead of growing
+python3 -u mb_crawl.py projects hyderabad | python3 -u rolling_log.py logs/hyderabad-crawl.log
 python3 osm_fetch.py gurgaon
 python3 build_city.py gurgaon                                               # -> web/public/data/
 
@@ -78,7 +81,7 @@ cd ../web && npm install && npm run dev
 
 Tests: `cd pipeline && uv run --with pytest pytest` and `cd web && npx vitest run --root .. cli web/src`.
 
-Cities live in `data/cities.json`. Gurugram and Hyderabad are built; Bengaluru and Mumbai are configured and need the pipeline run (see the skill, Job 2). A city may set `default_mode` to `rent` to open on monthly rents, and `tiles` to split its buildings query when one bbox is too big for Overpass.
+Cities live in `data/cities.json`. Gurugram and Hyderabad are built; Bengaluru and Mumbai are configured and need the pipeline run (see the skill, Job 2). A city may set `default_mode` to `rent` to open on monthly rents, `tiles` to split its buildings query when one bbox is too big for Overpass, and `priority` (`{name, center: [lng, lat], km}`) to have the crawler read one area first — Hyderabad reads the 10 km around HITEC City before the rest of the city. Nothing is dropped either way; `priority` only changes the order pages are fetched in.
 
 Press `/` to search for a society. The Streets button switches to a street map with road and sector names.
 
