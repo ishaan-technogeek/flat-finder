@@ -6,11 +6,11 @@ import { DEFAULT_CRITERIA, NEAR, feetLabel, formatINR, matchSociety, priceFor } 
 
 // Where the data is fetched from and where the printed links point. FF_SITE moves both: a fork
 // publishes its own cities, and `FF_SITE=http://localhost:4173` reads the build in front of you.
-const SITE = (process.env.FF_SITE || 'https://flat-finder.pages.dev').replace(/\/+$/, '');
+const SITE = (process.env.FF_SITE || 'https://ishaan-technogeek.github.io/flat-finder').replace(/\/+$/, '');
 
 const HELP = `flatfinder: find housing societies that fit
 
-  npx github:kairothq/flat-finder [options]
+  npx github:ishaan-technogeek/flat-finder [options]
 
   --city <id>            gurgaon (default), hyderabad, more as they are added
   --bhk 3,4              BHK types

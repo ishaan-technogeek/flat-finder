@@ -4,7 +4,9 @@ Every housing society in a city on one night map. Set the smallest bedroom you c
 
 Gurugram is first: about 2,700 projects from Magicbricks, building outlines from OpenStreetMap, and a set of societies verified by reading builder brochures and HRERA plans.
 
-Hyderabad is second and deliberately partial: 634 societies with their locations and localities from OpenStreetMap, and no prices, rents or unit sizes, because its listing pages have not been read. Nothing is estimated to cover the gap, so every one of its societies shows as "not checked yet" and the price and bedroom filters match nothing there until a crawl runs.
+Hyderabad is second and deliberately partial: 634 societies with their locations and localities from OpenStreetMap, and no prices, rents or unit sizes, because its listing pages have not been read. Nothing is estimated to cover the gap. What it can answer is where a society is, what type it is and what is near it; set a budget or a bedroom size and every society there turns to "not checked yet" until a crawl runs.
+
+This is a fork of [kairothq/flat-finder](https://github.com/kairothq/flat-finder) that adds Hyderabad, published at <https://ishaan-technogeek.github.io/flat-finder/>.
 
 ## What the colours mean
 
@@ -37,19 +39,19 @@ Cards also show resident ratings by category, review snippets, the 5-year price 
 
 ## Download the data
 
-- `/data/gurgaon-societies.csv`: one row per society (location, type, listings, buy and rent medians and estimates per BHK, ratings, amenities, links).
-- `/data/gurgaon-units.csv`: one row per unit type, with bedroom sizes and sources.
+- `/data/<city>-societies.csv` (`gurgaon`, `hyderabad`): one row per society (location, type, listings, buy and rent medians and estimates per BHK, ratings, amenities, links).
+- `/data/<city>-units.csv`: one row per unit type, with bedroom sizes and sources. Hyderabad has no unit rows yet.
 - "Export these results" on the site downloads whatever your filters currently match.
 
 ## Use it inside Claude (connector)
 
-Flat Finder is an MCP server at `https://flat-finder.pages.dev/mcp`. In Claude, add a custom connector with that URL, then ask things like "3 BHK in Gurgaon under ₹80k rent, every bedroom at least 11 by 12, park within 500 m". Tools: `search_societies` (any sector, budget, size, amenity, distance; up to 200 results per call), `breakdown` (group by sector, BHK, amenity, metro distance or rent band), `list_localities`, `get_society` (with reviews and rating categories), `compare_societies`. Listing prices that look like typos are flagged with a reason and not used for filtering.
+Flat Finder is an MCP server at `https://flat-finder.pages.dev/mcp` — upstream's deployment, so Gurugram only. This fork is on GitHub Pages, which serves files and cannot run `web/functions/mcp.js`, so `/mcp` on it answers 404 and there is no connector for Hyderabad yet; `--data` on the CLI below reads a local build in the meantime. In Claude, add a custom connector with the upstream URL, then ask things like "3 BHK in Gurgaon under ₹80k rent, every bedroom at least 11 by 12, park within 500 m". Tools: `search_societies` (any sector, budget, size, amenity, distance; up to 200 results per call), `breakdown` (group by sector, BHK, amenity, metro distance or rent band), `list_localities`, `get_society` (with reviews and rating categories), `compare_societies`. Listing prices that look like typos are flagged with a reason and not used for filtering.
 
 ## Search from a terminal
 
 ```bash
-npx github:kairothq/flat-finder --bhk 3,4 --min-bedroom "11'3x12'3" --min-sqft 1620 --amenity squash --likely
-npx github:kairothq/flat-finder --bhk 3 --max-rent 80k --amenity pool
+npx github:ishaan-technogeek/flat-finder --bhk 3,4 --min-bedroom "11'3x12'3" --min-sqft 1620 --amenity squash --likely
+npx github:ishaan-technogeek/flat-finder --city hyderabad --type apartment --near park
 ```
 
 ## Use it with Claude Code
