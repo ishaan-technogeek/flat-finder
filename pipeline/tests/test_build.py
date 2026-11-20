@@ -90,6 +90,24 @@ def test_plan_urls_do_not_depend_on_string_hashing():
     assert build_city.plan_urls({}, {}) == []
 
 
+def test_sources_credit_the_portal_only_when_it_supplied_a_page(tmp_path):
+    crawled = [{"url": "https://www.magicbricks.com/propertyDetails/x"}]
+    seeded = [{"url": "https://www.openstreetmap.org/way/245966543"}, {"url": None}]
+    cfg = {"name": "Hyderabad"}
+    assert build_city.sources_for("hyderabad", cfg, tmp_path, crawled)[0] == "Magicbricks project pages"
+    # a seed-built city has never been crawled, so naming the portal would claim a provenance it does not have
+    assert build_city.sources_for("hyderabad", cfg, tmp_path, seeded) == ["OpenStreetMap contributors"]
+
+
+def test_sources_name_rera_only_with_the_file_to_back_it(tmp_path):
+    cfg = {"name": "Gurugram", "rera": "HRERA Gurugram"}
+    assert "HRERA Gurugram" not in build_city.sources_for("gurgaon", cfg, tmp_path)
+    (tmp_path / "gurgaon-hrera.json").write_text("[]")
+    assert "HRERA Gurugram" in build_city.sources_for("gurgaon", cfg, tmp_path)
+    # Hyderabad has no Telangana RERA script, so it must not inherit Haryana's line
+    assert build_city.sources_for("hyderabad", {"name": "Hyderabad"}, tmp_path) == ["OpenStreetMap contributors"]
+
+
 def test_match_verified_needs_whole_name_and_sector():
     ps = [{"mb_id": 1, "name": "M3M", "locality": "Sector 65"},
           {"mb_id": 2, "name": "M3M Heights", "locality": "Sector 65"},

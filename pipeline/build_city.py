@@ -238,9 +238,15 @@ def shapes_for(s, area, bld_grid, sid_seed):
     return feats, shape
 
 
-def sources_for(city, cfg, vdir):
-    """Where the city's numbers came from. Only name a source that actually contributed a file."""
-    out = ["Magicbricks project pages", "OpenStreetMap contributors"]
+def sources_for(city, cfg, vdir, societies=()):
+    """Where the city's numbers came from. Only name a source that actually contributed a file.
+
+    A city built from a seed file has never been crawled, so crediting the portal would claim a provenance
+    its numbers do not have. Name it only once a society actually links to a portal page.
+    """
+    out = ["OpenStreetMap contributors"]
+    if any("magicbricks" in (s.get("url") or "") for s in societies):
+        out.insert(0, "Magicbricks project pages")
     if cfg.get("rera") and (vdir / f"{city}-hrera.json").exists():
         out.append(cfg["rera"])
     if (vdir / f"{city}.json").exists():
@@ -482,7 +488,7 @@ def main(city="gurgaon"):
                        "ai_read": sum(1 for s in societies if s.get("ai_read")),
                        "for_sale": sum(s["sale_count"] or 0 for s in societies), "for_rent": sum(s["rent_count"] or 0 for s in societies),
                        "verified": sum(s["verified"] for s in societies)},
-            "sources": sources_for(city, cfg, vdir),
+            "sources": sources_for(city, cfg, vdir, societies),
             "societies": societies, "events": events}
     details = {}
     for s in societies:  # heavy per-society text, loaded only when a card opens
