@@ -43,6 +43,9 @@ async function boot() {
   data = city;
   OVERVIEW.center = city.city.center;
   OVERVIEW.zoom = city.city.zoom || OVERVIEW.zoom;
+  // Rent-first cities open on the rent slider; where the city says nothing, buy stays the default. An explicit choice still wins:
+  // ?preset lands in intro() after this, the Buy/Rent toggle after that — so user and URL beat the city, which beats DEFAULT_CRITERIA.
+  if (city.city.default_mode === 'buy' || city.city.default_mode === 'rent') crit.mode = city.city.default_mode;
   byId = new Map(city.societies.map((s) => [s.id, s]));
   $('city-pick').replaceChildren(...Object.entries(cities).map(([id, c]) => new Option(c.name, id, false, id === cityId)));
   $('city-pick').onchange = () => { location.search = `?city=${$('city-pick').value}`; };
@@ -53,7 +56,7 @@ async function boot() {
 
   myList = params.get('list') ? params.get('list').split(',').filter((id) => byId.has(id)) : store.get(`ff-list-${cityId}`, []).filter((id) => byId.has(id));
   const c = city.counts, m = city.price_model || {}, rated = city.societies.filter((s) => s.rating).length;
-  $('note').textContent = `${c.on_map.toLocaleString()} societies · ${(c.for_sale || 0).toLocaleString()} homes for sale, ${(c.for_rent || 0).toLocaleString()} for rent on Magicbricks · ${c.verified} verified from brochures and HRERA plans`;
+  $('note').textContent = `${c.on_map.toLocaleString()} societies · ${(c.for_sale || 0).toLocaleString()} homes for sale, ${(c.for_rent || 0).toLocaleString()} for rent on Magicbricks · ${c.verified} verified from brochures and RERA plans`;
   $('about-prices').innerHTML = `Prices and rents are medians of live Magicbricks listings. <b>⚠</b> marks a listing price our checks think is a typo (far from the same home nearby, or rent and price that cannot both be right): it is shown as listed but not used for filters. <b>~</b> marks our estimate: rent is about ${((m.city_yield || 0.025) * 100).toFixed(1)}% of the price per year here (measured on ${m.pairs || 0} society and BHK pairs, correlation ${m.log_price_rent_correlation ?? 'n/a'}). "Probably fits" uses a cautious bedroom size estimated from unit size (${city.room_model?.n || 0} verified unit types). Resident ratings exist for ${rated.toLocaleString()} societies.`;
   $('dl-all').href = `/data/${cityId}-societies.csv`;
   $('dl-units').href = `/data/${cityId}-units.csv`;
@@ -365,6 +368,16 @@ function closeCard() {
 
 const metres = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m / 10) * 10} m`);
 
+// Cities are seeded from different places — Gurugram from Magicbricks, elsewhere OpenStreetMap or nothing at all — so the
+// source link is named after its host, and a society with no source page gets no link instead of a dead one.
+const SOURCE_LABELS = { 'magicbricks.com': 'Magicbricks page', 'openstreetmap.org': 'OpenStreetMap' };
+function sourceLink(url) {
+  if (!url) return '';
+  let host = '';
+  try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { /* keep the generic label */ }
+  return `<a href="${esc(url)}" target="_blank" rel="noopener">${SOURCE_LABELS[host] || 'Source page'}</a>`;
+}
+
 function renderCard(s) {
   const st = states.get(s.id);
   const rooms = crit.room || crit.roomArea;
@@ -393,7 +406,7 @@ function renderCard(s) {
   const facts = Object.entries(s.amen_facts || {}).map(([k, f]) => `<span class="hit">${esc(AMEN_LABELS[k] || k)}: ${esc(f.value)} (<a href="${esc(f.source)}" target="_blank" rel="noopener">p.${esc(f.page)}</a>)</span>`).join('');
   const amen = s.amenities.map((a) => `<span class="${[...want].some((w) => a.toLowerCase().includes(w)) ? 'hit' : ''}">${esc(a)}</span>`).join('');
   const plans = Object.entries(s.plan_links || {}).map(([b, urls]) => urls.slice(0, 2).map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${b} BHK plan${urls.length > 1 ? ' ' + (i + 1) : ''}</a>`).join(' ')).join(' ');
-  const issue = `${REPO}/issues/new?title=${encodeURIComponent('Research: ' + s.name)}&body=${encodeURIComponent(`Please verify room sizes and amenities for ${s.name} (${s.locality || ''}).\n\nPortal page: ${s.url}\n${s.brochure_url ? 'Brochure: ' + s.brochure_url : ''}`)}`;
+  const issue = `${REPO}/issues/new?title=${encodeURIComponent('Research: ' + s.name)}&body=${encodeURIComponent(`Please verify room sizes and amenities for ${s.name} (${s.locality || ''}).\n\n${s.url ? `Portal page: ${s.url}\n` : ''}${s.brochure_url ? 'Brochure: ' + s.brochure_url : ''}`)}`;
   const facts2 = [s.towers && `${s.towers} towers`, s.units && `${Number(s.units).toLocaleString()} units`, s.acres && `${s.acres} acres`, s.status, s.possession && `possession ${s.possession}`].filter(Boolean).join(' · ');
   const counts = (s.sale_count || s.rent_count) ? `${(s.sale_count || 0).toLocaleString()} for sale · ${(s.rent_count || 0).toLocaleString()} for rent now` : 'No live listings';
   const parts = s.score_parts || {};
@@ -433,7 +446,7 @@ function renderCard(s) {
     <div class="links">
       <a class="btnlink" href="${esc(s.gmaps)}" target="_blank" rel="noopener">Google Maps and reviews</a>
       <a class="btnlink" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">Directions</a>
-      <a href="${esc(s.url)}" target="_blank" rel="noopener">Magicbricks page</a>
+      ${sourceLink(s.url)}
       ${s.brochure_url ? `<a href="${esc(s.brochure_url)}" target="_blank" rel="noopener">Brochure</a>` : ''}
       ${plans}
       ${!s.verified ? `<a href="${esc(issue)}" target="_blank" rel="noopener">Request a room check →</a>` : ''}
