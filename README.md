@@ -4,6 +4,8 @@ Every housing society in a city on one night map. Set the smallest bedroom you c
 
 Gurugram is first: about 2,700 projects from Magicbricks, building outlines from OpenStreetMap, and a set of societies verified by reading builder brochures and HRERA plans.
 
+Hyderabad is second and deliberately partial: 634 societies with their locations and localities from OpenStreetMap, and no prices, rents or unit sizes, because its listing pages have not been read. Nothing is estimated to cover the gap, so every one of its societies shows as "not checked yet" and the price and bedroom filters match nothing there until a crawl runs.
+
 ## What the colours mean
 
 - **Bright**: matches your search.
@@ -63,17 +65,22 @@ python3 mb_crawl.py list gurgaon && python3 mb_crawl.py projects gurgaon   # pol
 python3 osm_fetch.py gurgaon
 python3 build_city.py gurgaon                                               # -> web/public/data/
 
+# a city with no crawl yet: seed it from OpenStreetMap instead of the portal
+python3 seed_hyderabad.py                                                   # -> data/seed/hyderabad.json
+python3 osm_fetch.py hyderabad
+python3 build_hyderabad.py          # seed -> the same build; crawled records win where both exist
+
 # site
 cd ../web && npm install && npm run dev
 ```
 
 Tests: `cd pipeline && uv run --with pytest pytest` and `cd web && npx vitest run --root .. cli web/src`.
 
-Cities live in `data/cities.json`. Gurugram is built; Bengaluru and Mumbai are configured and need the pipeline run (see the skill, Job 2).
+Cities live in `data/cities.json`. Gurugram and Hyderabad are built; Bengaluru and Mumbai are configured and need the pipeline run (see the skill, Job 2). A city may set `default_mode` to `rent` to open on monthly rents, and `tiles` to split its buildings query when one bbox is too big for Overpass.
 
 Press `/` to search for a society. The Streets button switches to a street map with road and sector names.
 
-Useful links: `?city=gurgaon`, `?map=streets` or `?map=light`, `?preset=divy` loads the example search, `?open=<society id>` opens one society, `?nointro` skips the globe fly-in.
+Useful links: `?city=gurgaon` or `?city=hyderabad`, `?map=streets` or `?map=light`, `?preset=divy` loads the example search, `?open=<society id>` opens one society, `?nointro` skips the globe fly-in.
 
 ## Add verified research
 

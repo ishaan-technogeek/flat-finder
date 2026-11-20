@@ -37,6 +37,15 @@ Explain the verdicts: **match** (every bedroom read and passes), **likely** (roo
    python3 osm_fetch.py <city>           # OSM outlines; retries Overpass mirrors
    python3 build_city.py <city>          # writes web/public/data/<city>.json, -shapes.geojson, cities.json
    ```
+   If the crawl is not an option yet, a city can be seeded from OpenStreetMap instead, as Hyderabad was:
+   ```bash
+   python3 seed_hyderabad.py       # named apartment buildings and residential areas -> data/seed/<city>.json
+   python3 osm_fetch.py <city>
+   python3 build_hyderabad.py      # loads the seed, then runs the same build_city as above
+   ```
+   A seeded city has locations and localities and nothing else. Leave every number it cannot source `null`:
+   the site then says it has no price data rather than showing medians of listings nobody read. Re-running
+   `build_hyderabad.py` after a crawl keeps the crawled record wherever both have one.
 3. Check the printed counts: `not_located` should be small, and `other` kinds should be under 1%. Open `cd web && npm run dev` then `http://localhost:5173/?city=<city>` and confirm societies sit on the right neighbourhoods.
 4. Run tests: `cd pipeline && uv run --with pytest pytest` and `cd web && npx vitest run --root .. cli web/src`.
 5. Open a pull request with the new data files. Do not commit `pipeline/cache/` or `osm_buildings.geojson`.
