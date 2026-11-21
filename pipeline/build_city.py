@@ -165,7 +165,15 @@ def dedupe(projects):
 
     A listing that names a different phase, block, tower or pocket is a different society and is never
     merged away, however close it is: a merge keeps only one of the two, so it would take the other's
-    listings, units and rating off the map entirely.
+    listings, units and rating off the map entirely. Two marks have to be the *same* mark to merge, not
+    merely overlap: "NM Township Phase 6" and "NM Township Phase 1" share the "nm" from the developer's
+    initials, which under an intersection test made Phase 1, 3 and 5 all disappear into Phase 6.
+
+    An unmarked name still merges with a marked one -- the portal files one society as both "Beverly
+    Park" and "Beverly Park II" -- but only with one of them. Once it has absorbed a phase it stands
+    for that phase, so a second, different phase is a different society: "Legend Apartment Somajiguda"
+    swallowed both "The Legend Somajiguda I" and "The Legend Somajiguda II" before this, and 18
+    societies in Hyderabad were standing in for two or more phases each.
     """
     groups = defaultdict(list)
     for i, p in enumerate(projects):
@@ -177,14 +185,16 @@ def dedupe(projects):
             continue
         here = []
         for i, p, m in members:
-            for _, q, qm in here:
-                if m and qm and not m & qm:  # Pocket B is not Pocket E; Park II is Park 2
+            for survivor in here:
+                q, qm = survivor[1], survivor[2]
+                if m and qm and m != qm:  # Pocket B is not Pocket E; Park II is Park 2
                     continue
                 if geo.dist_m((p["lng"], p["lat"]), (q["lng"], q["lat"])) < 400:
                     q.setdefault("merged", []).append(p["url"])
+                    survivor[2] = qm or m  # an unmarked survivor now stands for the phase it absorbed
                     break
             else:
-                here.append((i, p, m))
+                here.append([i, p, m])
         kept += [(i, p) for i, p, _ in here]
     return [p for _, p in sorted(kept, key=lambda t: t[0])]  # back into the order they arrived in
 

@@ -63,6 +63,29 @@ def test_dedupe_still_merges_a_number_written_two_ways():
     assert [p["url"] for p in out] == ["r"] and out[0]["merged"] == ["a", "u"]
 
 
+def test_dedupe_lets_an_unmarked_name_stand_for_one_phase_but_not_two():
+    # real Hyderabad: "Legend Apartment Somajiguda" names no phase, and absorbed both of the named ones
+    rows = [{"name": "Legend Apartment Somajiguda", "lng": 78.4600, "lat": 17.4200, "url": "plain"},
+            {"name": "The Legend Somajiguda II", "lng": 78.4601, "lat": 17.4201, "url": "two"},  # ~15 m
+            {"name": "The Legend Somajiguda I", "lng": 78.4602, "lat": 17.4202, "url": "one"}]
+    out = build_city.dedupe(rows)
+    # the unmarked listing takes the first phase it meets, and then stands for that phase: the other
+    # one keeps its own pin, its own listings and its own rating instead of disappearing into it
+    assert [p["url"] for p in out] == ["plain", "one"] and out[0]["merged"] == ["two"]
+
+
+def test_dedupe_needs_the_same_mark_not_an_overlapping_one():
+    # "nm" is the developer's initials, shared by every phase: an intersection test merged them all
+    rows = [{"name": "NM Township Phase 6", "lng": 78.3000, "lat": 17.5000, "url": "p6"},
+            {"name": "NM Township Phase 1", "lng": 78.3001, "lat": 17.5001, "url": "p1"},  # ~15 m
+            {"name": "Mahitha S Green Grove Block A", "lng": 78.3100, "lat": 17.5100, "url": "ba"},
+            {"name": "Mahitha S Green Grove Block B", "lng": 78.3101, "lat": 17.5101, "url": "bb"}]
+    assert build_city.marks("NM Township Phase 6") & build_city.marks("NM Township Phase 1") == {"nm"}
+    out = build_city.dedupe(rows)
+    assert [p["url"] for p in out] == ["p6", "p1", "ba", "bb"]
+    assert not any("merged" in p for p in out)
+
+
 def test_marks_reads_only_the_part_tokens_drops():
     assert build_city.marks("RWA Pocket B") == {"b"}
     assert build_city.marks("M3M Antalya Hills Phase I") == {1}  # "m3m" is 3 chars, so it is a name token
