@@ -38,11 +38,33 @@ def backoff(attempt):
     return min(10 * 2 ** (attempt // len(MIRRORS)), 300)
 
 
+def cached(query, name):
+    """The cached response for this query, or None if there is not one.
+
+    The file name alone is not the request. "buildings-03" is the fourth tile of an n x n split of the city
+    bbox, so editing the bbox or the tile count makes the same name mean a different rectangle, and the
+    cache would answer the new request with the old rectangle's buildings -- silently, and for as long as
+    the cache lives. The query is written beside the response and has to match it.
+
+    A response cached before this check has no query beside it. There is half a gigabyte of it and nothing
+    has moved under it, so it is trusted once and labelled rather than fetched again.
+    """
+    f, q = CACHE / f"{name}.json", CACHE / f"{name}.query"
+    if not f.exists():
+        return None
+    if q.exists() and q.read_text() != query:
+        print(f"cached {name} answers a different query; fetching it again", flush=True)
+        return None
+    q.write_text(query)
+    return json.loads(f.read_text())
+
+
 def overpass(query, name):
     CACHE.mkdir(parents=True, exist_ok=True)
     f = CACHE / f"{name}.json"
-    if f.exists():
-        return json.loads(f.read_text())
+    hit = cached(query, name)
+    if hit is not None:
+        return hit
     body = urllib.parse.urlencode({"data": query}).encode()
     for attempt, url in enumerate(MIRRORS * ROUNDS):
         try:
@@ -50,6 +72,7 @@ def overpass(query, name):
             raw = urllib.request.urlopen(req, timeout=300).read()
             data = json.loads(raw)
             f.write_bytes(raw)
+            (CACHE / f"{name}.query").write_text(query)
             return data
         except Exception as e:
             wait = backoff(attempt)

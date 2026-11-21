@@ -1,4 +1,19 @@
+import json
+
 import osm_fetch
+
+
+def test_a_cached_tile_is_not_reused_for_a_different_rectangle(tmp_path, monkeypatch):
+    # "buildings-03" is the fourth tile of an n x n split: retune the bbox or the tile count and the same
+    # name means a different rectangle, which the cache would answer with the old rectangle's buildings
+    monkeypatch.setattr(osm_fetch, "CACHE", tmp_path)
+    q1 = 'way["building"](17.2,78.2,17.3,78.3);out geom;'
+    (tmp_path / "buildings-03.json").write_text(json.dumps({"elements": [1]}))
+    assert osm_fetch.cached(q1, "buildings-03") == {"elements": [1]}  # no query recorded yet: trusted once
+    assert (tmp_path / "buildings-03.query").read_text() == q1        # ... and labelled, so now it is known
+    assert osm_fetch.cached(q1, "buildings-03") == {"elements": [1]}
+    assert osm_fetch.cached('way["building"](17.3,78.3,17.4,78.4);out geom;', "buildings-03") is None
+    assert osm_fetch.cached(q1, "buildings-04") is None               # nothing cached under that name at all
 
 
 def test_tile_bboxes_is_a_noop_for_one_tile():
