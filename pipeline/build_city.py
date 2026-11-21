@@ -263,7 +263,14 @@ def match_verified(v, projects, taken=()):
     return best
 
 
-def shapes_for(s, area, bld_grid, sid_seed):
+def shapes_for(s, area, bld_grid):
+    """The society's footprint and buildings: real OSM ones where we have them, invented ones where we do not.
+
+    Invented towers are seeded on the society's own id, not its position in the list. Seeded on the position,
+    inserting or merging one project renumbered every society after it and redrew all 24,350 generated layouts,
+    so a rebuild churned the whole 32 MB shapes file and no data diff could be read -- the same reason
+    plan_urls below is sorted.
+    """
     feats = []
     is_tall = s["kind"] == "apartment"
     if area:
@@ -286,7 +293,7 @@ def shapes_for(s, area, bld_grid, sid_seed):
         return feats, shape
     n = int(s.get("towers") or 0) or (max(2, min(12, round((s.get("units") or 300) / 120))) if is_tall else 8)
     w, d = (24, 18) if is_tall else (12, 10)
-    for t in geo.generate_towers(site, n, seed=sid_seed, w_m=w, d_m=d):
+    for t in geo.generate_towers(site, n, seed=s["id"], w_m=w, d_m=d):
         feats.append({"type": "Feature", "properties": {"sid": s["id"], "role": "bld", "h": TOWER_H if is_tall else 10.0, "shape": "generated"},
                       "geometry": {"type": "Polygon", "coordinates": [t]}})
     return feats, shape
@@ -524,14 +531,14 @@ def main(city="gurgaon"):
             pricing.add_estimates(s, model, {b: statistics.median(v) for b, v in sizes.items()}, psf)
         s["prices"] = {str(b): v for b, v in sorted(s["prices"].items())}
 
-    for i, s in enumerate(societies):
+    for s in societies:
         area = match_area(s, area_grid)
         if area and area["properties"]["osm"] in used_areas:
             area = None  # another society already owns this boundary
         if area:
             used_areas.add(area["properties"]["osm"])
             s["osm_area"] = area["properties"]["osm"]
-        f, shape = shapes_for(s, area, bld_grid, i)
+        f, shape = shapes_for(s, area, bld_grid)
         s["shape"] = shape
         shapes.extend(f)
 

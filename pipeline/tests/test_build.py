@@ -216,6 +216,17 @@ def test_city_tokens_never_count_towards_a_name_match():
     assert {"hyderabad", "secunderabad", "hitec"} <= build_city.city_tokens("hyderabad", cfg)
 
 
+def test_generated_towers_follow_the_society_not_its_place_in_the_list():
+    grid = build_city.Grid([], lambda b: b["_c"])
+    s = {"id": "s5083336", "name": "Prestige High Fields", "kind": "apartment", "lat": 17.4504, "lng": 78.3781,
+         "acres": 6, "towers": 4, "units": 480}
+    first = build_city.shapes_for(s, None, grid)[0]
+    # the same society built after a project was inserted ahead of it must get the same buildings back
+    assert build_city.shapes_for(dict(s), None, grid)[0] == first
+    moved = build_city.shapes_for(dict(s, id="s9999999"), None, grid)[0]
+    assert [f["geometry"] for f in moved] != [f["geometry"] for f in first]  # a different society, a different layout
+
+
 def test_plan_urls_do_not_depend_on_string_hashing():
     ai = {"https://img/b.jpg": {}, "https://img/a.jpg": {}}
     ocr = {"https://img/c.jpg": {}, "https://img/a.jpg": {}}
