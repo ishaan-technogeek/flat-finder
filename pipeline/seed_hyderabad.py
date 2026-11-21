@@ -101,9 +101,29 @@ def norm(name):
     return " ".join(re.findall(r"[a-z0-9]+", name.lower()))
 
 
+def designator(part):
+    """This names a block, tower, phase or wing and nothing else, so it is not anybody's society."""
+    return not re.sub(TAIL, "", part, flags=re.I).strip(" -–,")
+
+
+def society_part(name):
+    """The segment of a comma-written OSM name that is the society.
+
+    Which end to read from depends on which end the name starts at. "Gayatri Nest Apartments, Cyber Hill"
+    and "Milestone Apartments, Kallari CHS" name the building and then the colony around it, so the society
+    is first; "Tower 1, Daisy, Prestige High Fields" starts inside the project and works outwards, so it is
+    last. Six of Prestige High Fields' towers are written the second way and arrived as six societies named
+    after one tower each, which no renter would find and validate() could not tell from six real ones.
+    """
+    parts = [p.strip() for p in name.split(",") if p.strip()]
+    if len(parts) < 2:
+        return name
+    return parts[-1] if designator(parts[0]) else parts[0]
+
+
 def clean(name):
     """How a renter would search for it: no block or phase tail, no misspelt 'appartment', sane case."""
-    n = " ".join(name.split())
+    n = " ".join(society_part(name).split())
     for a, b in FIX:
         n = re.sub(a, b, n, flags=re.I)
     prev = None
@@ -163,14 +183,20 @@ def candidates(raw):
 
 
 def merge_blocks(cands):
-    """One record per society: the same name within 400 m is a block, tower or phase of one place."""
+    """One record per society: the same name within 400 m is a block, tower or phase of one place.
+
+    Ordered by source and then OSM id, so the member whose id the record carries does not depend on where
+    OSM currently draws the outlines. Sorting by coordinates made the head of a cluster move whenever a
+    mapper re-traced a building, and coord_source is both the row's provenance and the seed id it hashes.
+    A residential area is the society site, so it comes first and heads any cluster it lands in.
+    """
     groups = defaultdict(list)
     for c in cands:
         groups[norm(c["name"])].append(c)
     out = []
     for members in groups.values():
         clusters = []
-        for m in sorted(members, key=lambda x: (x["lat"], x["lng"])):
+        for m in sorted(members, key=lambda x: (x["src"] != "res", x["osm"])):
             for cl in clusters:
                 if dist_m((m["lat"], m["lng"]), (cl[0]["lat"], cl[0]["lng"])) < NEAR_M:
                     cl.append(m)
@@ -178,8 +204,7 @@ def merge_blocks(cands):
             else:
                 clusters.append([m])
         for cl in clusters:
-            head = next((m for m in cl if m["src"] == "res"), cl[0])  # a residential area is the society site
-            out.append({**head, "lat": sum(m["lat"] for m in cl) / len(cl),
+            out.append({**cl[0], "lat": sum(m["lat"] for m in cl) / len(cl),
                         "lng": sum(m["lng"] for m in cl) / len(cl), "members": len(cl)})
     return out
 
@@ -216,6 +241,10 @@ def locality_of(s, by, canon):
     The society's own addr:suburb is used only when it names a place OSM also maps, so every locality in the
     seed comes from one vocabulary and the map filter has no near-duplicate spellings. addr:city is ignored:
     it says "Hyderabad", which is the city, not a locality.
+
+    The distance to the node is part of the provenance, because it is what the claim is worth: a suburb node
+    5 km away is a guess at which neighbourhood this is, and 624 of the 626 rows are named this way. Where
+    a crawl exists, build_hyderabad overrides this with the label the surrounding projects carry.
     """
     tag = norm(s["tags"].get("addr:suburb") or "")
     if tag in canon:
@@ -228,7 +257,7 @@ def locality_of(s, by, canon):
                 if d < bd:
                     best, bd = p, d
         if best:
-            return best["name"], f"osm:nearest-{best['osm']}"
+            return best["name"], f"osm:nearest-{best['osm']} at {round(bd)} m"
     return None, None
 
 

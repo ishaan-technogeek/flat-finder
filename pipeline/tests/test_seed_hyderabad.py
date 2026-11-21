@@ -32,6 +32,29 @@ def test_clean_keeps_a_name_that_merely_ends_in_a_word_a_tail_uses():
     assert seed.clean("Rajapushpa Regalia, Tower - A") == "Rajapushpa Regalia"
 
 
+def test_a_comma_written_name_is_read_from_whichever_end_it_starts_at():
+    # six of Prestige High Fields' towers are mapped from the inside out, and arrived as six societies
+    for raw in ["Tower 1, Daisy, Prestige High Fields", "Tower 10, Lotso, Prestige High Fields",
+                "Tower 9, Russell, Prestige High Fields"]:
+        assert seed.clean(raw) == "Prestige High Fields", raw
+    # a name that starts with the building names the colony second, so the first segment is the society
+    assert seed.clean("Gayatri Nest Apartments, Cyber Hill") == "Gayatri Nest Apartments"
+    assert seed.clean("Milestone Apartments, Kallari CHS") == "Milestone Apartments"
+    assert seed.clean("Sri Sai Krupa,Saptagiri Enclave") == "Sri Sai Krupa"
+    assert seed.designator("Tower 1") and seed.designator("Block - A") and not seed.designator("Daisy")
+
+
+def test_the_record_keeps_the_same_osm_object_when_an_outline_is_retraced():
+    # the head's id is the row's provenance and the seed id hashes it, so it must not depend on where OSM
+    # currently draws the buildings: this cluster used to be headed by whichever block was furthest south
+    here = [cand("Aparna Cyber Life", 17.4100, 78.3800, oid=7),
+            cand("Aparna Cyber Life", 17.4110, 78.3805, oid=3),
+            cand("Aparna Cyber Life", 17.4105, 78.3802, oid=5)]
+    assert seed.merge_blocks(here)[0]["osm"] == "way/3"
+    moved = [here[1], here[0], {**here[2], "lat": 17.4095}]  # re-traced, and read back in another order
+    assert seed.merge_blocks(moved)[0]["osm"] == "way/3"
+
+
 def test_clean_normalises_spelling_and_case_without_shouting_initialisms():
     assert seed.clean("aparna  appartments") == "Aparna Apartments"
     assert seed.clean("Vasavi Apts") == "Vasavi Apartments"
@@ -108,8 +131,9 @@ def test_locality_prefers_the_suburb_a_renter_searches_over_the_colony_next_door
         el("Hyderabad", 17.3850, 78.4867, kind="node", oid=13, place="city"),
     ]}}
     by, canon = seed.place_layers(raw)
+    # the distance is part of the provenance: a suburb node 5 km away is a guess at the neighbourhood
     assert seed.locality_of({"lat": 17.4420, "lng": 78.3500, "tags": {}}, by, canon) == \
-        ("Gachibowli", "osm:nearest-node/10")
+        ("Gachibowli", "osm:nearest-node/10 at 308 m")
     # a colony 3 km from the suburb loses to it: a renter searches Gachibowli, not Masjid Banda
     assert seed.locality_of({"lat": 17.4645, "lng": 78.3605, "tags": {}}, by, canon)[0] == "Gachibowli"
     # but beyond every suburb's 5 km radius a mapped colony is better than nothing
@@ -125,7 +149,7 @@ def test_locality_from_the_society_tags_only_when_osm_maps_that_place_too():
     assert seed.locality_of(tagged, by, canon) == ("Gachibowli", "osm:addr:suburb")  # canonical spelling wins
     # an addr:suburb naming a place OSM does not map would add a near-duplicate to the filter, so it is ignored
     invented = {"lat": 17.4402, "lng": 78.3482, "tags": {"addr:suburb": "Lingampally X Roads"}}
-    assert seed.locality_of(invented, by, canon) == ("Gachibowli", "osm:nearest-node/10")
+    assert seed.locality_of(invented, by, canon) == ("Gachibowli", "osm:nearest-node/10 at 31 m")
 
 
 def test_validate_refuses_a_row_that_claims_a_number_it_has_no_source_for():
