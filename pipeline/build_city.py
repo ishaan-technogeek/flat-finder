@@ -56,6 +56,20 @@ def tokens(name):
 
 
 ROMAN = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7, "viii": 8, "ix": 9, "x": 10}
+# The building words a developer uses to tell two projects on one site apart, mapped to one label each so a
+# plural is not a different project. Every key is a GENERIC word -- tokens() has already dropped it, which is
+# why dedupe cannot see it -- but only these name a form. "the", "of", "and", "by", "new" distinguish nothing;
+# "sector" and "phase" are labels for a number marks() already reads; "society", "cghs", "group" and "housing"
+# name the owners' body, not the building, and the portal uses them interchangeably with each other.
+FORM = {"apartment": "apartment", "apartments": "apartment", "tower": "tower", "towers": "tower",
+        "residency": "residency", "residences": "residency", "green": "green", "greens": "green",
+        "heights": "heights", "park": "park", "city": "city", "estate": "estate", "homes": "homes",
+        "floors": "floors", "plaza": "plaza"}
+
+
+def forms(name):
+    """Which building form this one calls itself: Aditya Empress Park / Towers / Heights are three."""
+    return {FORM[t] for t in re.findall(r"[a-z0-9]+", (name or "").lower()) if t in FORM}
 
 
 def marks(name):
@@ -169,33 +183,43 @@ def dedupe(projects):
     merely overlap: "NM Township Phase 6" and "NM Township Phase 1" share the "nm" from the developer's
     initials, which under an intersection test made Phase 1, 3 and 5 all disappear into Phase 6.
 
+    The building word is the other half of the same rule, because tokens() drops it as generic: Aditya
+    Empress Park, Aditya Empress Towers and Aditya Empress Heights are three separately listed projects
+    within 300 m, with 30 live listings between the two that used to be deleted. Across Hyderabad that
+    was 57 projects and 69 listings off the map.
+
     An unmarked name still merges with a marked one -- the portal files one society as both "Beverly
     Park" and "Beverly Park II" -- but only with one of them. Once it has absorbed a phase it stands
     for that phase, so a second, different phase is a different society: "Legend Apartment Somajiguda"
     swallowed both "The Legend Somajiguda I" and "The Legend Somajiguda II" before this, and 18
     societies in Hyderabad were standing in for two or more phases each.
     """
+    def apart(a, b):
+        """These two name different things, rather than one naming nothing: B is not E, Park is not Towers."""
+        return bool(a and b and a != b)
+
     groups = defaultdict(list)
     for i, p in enumerate(projects):
-        groups[frozenset(tokens(p["name"]))].append((i, p, marks(p["name"])))
+        groups[frozenset(tokens(p["name"]))].append((i, p, marks(p["name"]), forms(p["name"])))
     kept = []
     for name, members in groups.items():
         if not name:  # nothing distinguishing left in the name: never merged, so never compared
-            kept += [(i, p) for i, p, _ in members]
+            kept += [(i, p) for i, p, _, _ in members]
             continue
         here = []
-        for i, p, m in members:
+        for i, p, m, fm in members:
             for survivor in here:
-                q, qm = survivor[1], survivor[2]
-                if m and qm and m != qm:  # Pocket B is not Pocket E; Park II is Park 2
+                q = survivor[1]
+                if apart(m, survivor[2]) or apart(fm, survivor[3]):
                     continue
                 if geo.dist_m((p["lng"], p["lat"]), (q["lng"], q["lat"])) < 400:
                     q.setdefault("merged", []).append(p["url"])
-                    survivor[2] = qm or m  # an unmarked survivor now stands for the phase it absorbed
+                    # a survivor that named neither now stands for the phase and the form it absorbed
+                    survivor[2], survivor[3] = survivor[2] or m, survivor[3] or fm
                     break
             else:
-                here.append([i, p, m])
-        kept += [(i, p) for i, p, _ in here]
+                here.append([i, p, m, fm])
+        kept += [(i, p) for i, p, _, _ in here]
     return [p for _, p in sorted(kept, key=lambda t: t[0])]  # back into the order they arrived in
 
 

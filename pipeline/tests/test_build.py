@@ -86,6 +86,30 @@ def test_dedupe_needs_the_same_mark_not_an_overlapping_one():
     assert not any("merged" in p for p in out)
 
 
+def test_dedupe_keeps_the_park_the_towers_and_the_heights_apart():
+    # real Hyderabad: three separately listed Aditya Empress projects inside 300 m, 30 live listings on
+    # the two that were being deleted. tokens() drops "park", "towers" and "heights" as generic, so all
+    # three arrived at dedupe as the same name with no mark to tell them apart.
+    rows = [{"name": "Aditya Empress Park", "lng": 78.4029, "lat": 17.4050, "url": "park"},
+            {"name": "Aditya Empress Towers", "lng": 78.4053, "lat": 17.4052, "url": "tow"},  # ~260 m
+            {"name": "Aditya Empress Heights", "lng": 78.4040, "lat": 17.4051, "url": "hts"}]
+    assert build_city.tokens("Aditya Empress Park") == build_city.tokens("Aditya Empress Towers")
+    out = build_city.dedupe(rows)
+    assert [p["url"] for p in out] == ["park", "tow", "hts"]
+    assert not any("merged" in p for p in out)
+
+
+def test_dedupe_reads_a_plural_as_the_same_form():
+    # the half of the rule that still merges: one tower written two ways is one society, and a name that
+    # claims no form at all takes the first form it meets and then stands for it
+    rows = [{"name": "Lodha Bellezza", "lng": 78.3900, "lat": 17.4400, "url": "plain"},
+            {"name": "Lodha Bellezza Tower", "lng": 78.3901, "lat": 17.4401, "url": "sing"},  # ~15 m
+            {"name": "Lodha Bellezza Towers", "lng": 78.3902, "lat": 17.4402, "url": "plur"},
+            {"name": "Lodha Bellezza Park", "lng": 78.3903, "lat": 17.4403, "url": "park"}]
+    out = build_city.dedupe(rows)
+    assert [p["url"] for p in out] == ["plain", "park"] and out[0]["merged"] == ["sing", "plur"]
+
+
 def test_marks_reads_only_the_part_tokens_drops():
     assert build_city.marks("RWA Pocket B") == {"b"}
     assert build_city.marks("M3M Antalya Hills Phase I") == {1}  # "m3m" is 3 chars, so it is a name token
