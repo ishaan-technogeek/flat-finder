@@ -92,6 +92,15 @@ async function boot() {
   $('about-prices').innerHTML = listings
     ? `Prices and rents are medians of live ${portal} listings. <b>⚠</b> marks a listing price our checks think is a typo (far from the same home nearby, or rent and price that cannot both be right): it is shown as listed but not used for filters. <b>~</b> marks our estimate: rent is about ${((m.city_yield || 0.025) * 100).toFixed(1)}% of the price per year here (measured on ${m.pairs || 0} society and BHK pairs, correlation ${m.log_price_rent_correlation ?? 'n/a'}).${rooms} Resident ratings exist for ${rated.toLocaleString()} societies.`
     : `This city has no price data yet. Its societies, their locations and what is nearby come from OpenStreetMap; prices, rents and unit sizes come from listing pages, which have not been read for this city. Until they are, what the map can answer is where a society is, what type it is and what is near it. Set a budget or a bedroom size and every society turns to "not checked yet" instead of being guessed at.`;
+  // Where everything on the map came from, said on every city and not only on the ones with no listings,
+  // which is where `sources` used to be read. Society positions and outlines are a database derived from
+  // OpenStreetMap, and ODbL asks for the credit and the licence by name; maplibre's own control credits
+  // the basemap tiles, which is a different thing from the data this site ships. The notice sits under
+  // the download buttons because the two CSVs are that derived data, leaving with the reader.
+  const osm = '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, ODbL';
+  $('about-sources').innerHTML = `Where this comes from: ${esc((city.sources || ['OpenStreetMap contributors']).join(' · '))}.`
+    + ` Society positions, outlines and the names of societies no listing covers are derived from ${osm}.`
+    + (listings ? ` Prices, rents and listing counts are read from ${esc(portal)} project pages and are theirs.` : '');
   $('dl-all').href = `${BASE}data/${cityId}-societies.csv`;
   $('dl-units').href = `${BASE}data/${cityId}-units.csv`;
   $('dl-results').onclick = exportResults;
