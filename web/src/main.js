@@ -69,11 +69,16 @@ async function boot() {
   // exist and credit a portal that supplied nothing. Say what the map actually has instead.
   const portal = (city.sources || []).find((s) => s.startsWith('Magicbricks')) ? 'Magicbricks' : 'the listing portal';
   const listings = (c.for_sale || 0) + (c.for_rent || 0);
+  // Two clauses only hold where the build ran the pass behind them. "0 verified from brochures and RERA plans"
+  // and "estimated from unit size (0 verified unit types)" read as promises, and Hyderabad keeps neither: there
+  // is no Telangana RERA script and floor plan reads need a key this fork does not have. Drop them, don't zero them.
+  const checked = c.verified ? ` · ${c.verified} verified from brochures and RERA plans` : '';
+  const rooms = city.room_model ? ` "Probably fits" uses a cautious bedroom size estimated from unit size (${city.room_model.n} verified unit types).` : '';
   $('note').textContent = listings
-    ? `${c.on_map.toLocaleString()} societies · ${(c.for_sale || 0).toLocaleString()} homes for sale, ${(c.for_rent || 0).toLocaleString()} for rent on ${portal} · ${c.verified} verified from brochures and RERA plans`
+    ? `${c.on_map.toLocaleString()} societies · ${(c.for_sale || 0).toLocaleString()} homes for sale, ${(c.for_rent || 0).toLocaleString()} for rent on ${portal}${checked}`
     : `${c.on_map.toLocaleString()} societies mapped from ${(city.sources || ['OpenStreetMap contributors']).join(' and ')} · no listings yet, so no prices or unit sizes`;
   $('about-prices').innerHTML = listings
-    ? `Prices and rents are medians of live ${portal} listings. <b>⚠</b> marks a listing price our checks think is a typo (far from the same home nearby, or rent and price that cannot both be right): it is shown as listed but not used for filters. <b>~</b> marks our estimate: rent is about ${((m.city_yield || 0.025) * 100).toFixed(1)}% of the price per year here (measured on ${m.pairs || 0} society and BHK pairs, correlation ${m.log_price_rent_correlation ?? 'n/a'}). "Probably fits" uses a cautious bedroom size estimated from unit size (${city.room_model?.n || 0} verified unit types). Resident ratings exist for ${rated.toLocaleString()} societies.`
+    ? `Prices and rents are medians of live ${portal} listings. <b>⚠</b> marks a listing price our checks think is a typo (far from the same home nearby, or rent and price that cannot both be right): it is shown as listed but not used for filters. <b>~</b> marks our estimate: rent is about ${((m.city_yield || 0.025) * 100).toFixed(1)}% of the price per year here (measured on ${m.pairs || 0} society and BHK pairs, correlation ${m.log_price_rent_correlation ?? 'n/a'}).${rooms} Resident ratings exist for ${rated.toLocaleString()} societies.`
     : `This city has no price data yet. Its societies, their locations and what is nearby come from OpenStreetMap; prices, rents and unit sizes come from listing pages, which have not been read for this city. Until they are, what the map can answer is where a society is, what type it is and what is near it. Set a budget or a bedroom size and every society turns to "not checked yet" instead of being guessed at.`;
   $('dl-all').href = `${BASE}data/${cityId}-societies.csv`;
   $('dl-units').href = `${BASE}data/${cityId}-units.csv`;
