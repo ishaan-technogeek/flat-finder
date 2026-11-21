@@ -13,6 +13,7 @@ import statistics
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 
 import geo
@@ -31,16 +32,36 @@ DELAY = 1.0  # seconds between requests for the whole crawl, not for each worker
 WORKERS = 3  # overlapping fetches; the gate below sets the request rate, this only hides latency
 EVERY = 500  # projects between checkpoints: a city the size of Hyderabad rewrites ~140 MB each time
 # A block or captcha page answers 200 and looks like any other page, so only the body gives it away.
-BLOCK = ("access denied", "captcha", "unusual traffic", "request unsuccessful", "verify you are a human")
+# The last nine are the challenge and block pages the big CDNs put in front of a site -- Cloudflare's
+# interstitial and its "Attention Required", AWS WAF's and Akamai's block pages -- any of which could
+# appear between this crawler and the portal without the portal changing anything.
+BLOCK = ("access denied", "captcha", "unusual traffic", "request unsuccessful", "verify you are a human",
+         "attention required", "checking your browser", "just a moment", "enable javascript and cookies",
+         "ddos protection", "request blocked", "too many requests", "are you a robot", "bot detection")
 STATE = "window.SERVER_PRELOADED_STATE_"  # every real list and project page carries it
+REFUSED = (403, 429)  # the site saying no, not a hiccup: stop the run instead of retrying around it
+MISSING = (404, 410)  # this page is not there; nothing to wait for, so do not spend three attempts on it
 
 _gate = threading.Lock()
 _slot = 0.0  # monotonic time the next request may leave
+_say = threading.Lock()
 stop = threading.Event()  # set when the site blocks us, so the other workers stop asking
 
 
 class Blocked(Exception):
     """The site refused us. Report it and stop: never retry around it, never cache it."""
+
+
+class Gone(Exception):
+    """This page is a 404 or a 410. Not a refusal and not a hiccup: there is nothing there to wait for."""
+
+
+def say(msg):
+    """One line at a time. Three workers print mid-fetch, and print() writes the text and the newline
+    separately, so their messages spliced into each other: "  retry 1 http  blocked: http...".
+    """
+    with _say:
+        print(msg, flush=True)
 
 
 def wait_turn():
@@ -67,7 +88,7 @@ def read_cache(f):
     try:
         return gzip.decompress(f.read_bytes()).decode("utf-8", "ignore")
     except Exception as e:
-        print("  unreadable cache file, refetching:", f.name, e, flush=True)
+        say(f"  unreadable cache file, refetching: {f.name} {e}")
         f.unlink(missing_ok=True)
         return None
 
@@ -94,6 +115,15 @@ def write_atomic(f, data):
 
 
 def fetch(url):
+    """The page, from the cache or the site, or None when three attempts could not get one.
+
+    Only a page that proves it is a page is cached. An answer with no preloaded state on it is not a
+    block page we recognise and not a real one either -- an interstitial, an empty shell, a redirect to
+    a holding page -- and caching it would freeze this project at all-nulls for as long as the cache
+    lives, looking exactly like a real project whose page happened to be thin. If the portal ever
+    renames the state variable this stalls the crawl and says so on every page, which is the right way
+    round: loud and with nothing poisoned.
+    """
     CACHE.mkdir(parents=True, exist_ok=True)
     f = CACHE / (hashlib.sha1(url.encode()).hexdigest() + ".html.gz")
     if f.exists() and f.stat().st_size > 2000:
@@ -107,12 +137,23 @@ def fetch(url):
             html = urllib.request.urlopen(req, timeout=40).read().decode("utf-8", "ignore")
             if is_block(html):
                 raise Blocked(url)
+            if STATE not in html:
+                say(f"  no page state in {len(html)} bytes, not caching: {url}")
+                time.sleep(5 * (attempt + 1))
+                continue
             write_atomic(f, gzip.compress(html.encode("utf-8"), 9))
             return html
         except Blocked:
             raise
+        except urllib.error.HTTPError as e:
+            if e.code in REFUSED:
+                raise Blocked(f"{url} ({e.code} {e.reason})") from None
+            if e.code in MISSING:
+                raise Gone(f"{url} ({e.code} {e.reason})") from None
+            say(f"  retry {attempt + 1} {url} {e}")  # 5xx and the rest: a hiccup, back off and retry
+            time.sleep(5 * (attempt + 1))
         except Exception as e:  # network hiccup: back off and retry
-            print("  retry", attempt + 1, url, e, flush=True)
+            say(f"  retry {attempt + 1} {url} {e}")
             time.sleep(5 * (attempt + 1))
     return None
 
@@ -123,15 +164,20 @@ def crawl_list():
     pages = -(-total // 20)
     projects = {}
     for n in range(1, pages + 1):
-        html = fetch(LIST_URL.format(n))
+        try:
+            html = fetch(LIST_URL.format(n))
+        except Gone:
+            # pages are sequential, so past the last one they are all gone: the total over-counted
+            say(f"  list page {n} is gone, so the site has fewer than the {pages} pages it reported")
+            break
         if not html:
             continue
         for c in mb_parse.parse_list_page(html):
             projects[c["psmid"]] = mb_parse.card_to_project(c)
-        print(f"list {n}/{pages}: {len(projects)} projects", flush=True)
+        say(f"list {n}/{pages}: {len(projects)} projects")
     OUT.mkdir(parents=True, exist_ok=True)
     write_atomic(OUT / "mb_index.json", json.dumps(list(projects.values()), indent=0))
-    print("total reported", total, "collected", len(projects))
+    say(f"total reported {total} collected {len(projects)}")
 
 
 def resume(f, index):
@@ -147,7 +193,7 @@ def resume(f, index):
     try:
         rows = json.loads(f.read_text())
     except Exception as e:
-        print("  unreadable checkpoint, parsing again from the page cache:", e, flush=True)
+        say(f"  unreadable checkpoint, parsing again from the page cache: {e}")
         return {}, []
     urls = {p["url"] for p in index}
     # lat is read off the project page and is never on an index card, so it marks a parsed record
@@ -190,7 +236,7 @@ def prioritise(todo, done, pri):
         return todo
     at = place_by_pincode(done)
     if len(at) < 20:
-        print(f"  only {len(at)} pincodes placed so far: keeping index order", flush=True)
+        say(f"  only {len(at)} pincodes placed so far: keeping index order")
         return todo
     center = tuple(pri["center"])
 
@@ -203,8 +249,8 @@ def prioritise(todo, done, pri):
 
     ranked = sorted(((rank(p), p) for p in todo), key=lambda t: t[0])
     inside = sum(1 for r, _ in ranked if r[0] == 0)
-    print(f"  {inside} of {len(ranked)} unread projects are within {pri['km']} km of {pri['name']}: those "
-          f"first, nearest first, then the rest ({inside / 3600:.1f} h to clear the area at one a second)", flush=True)
+    say(f"  {inside} of {len(ranked)} unread projects are within {pri['km']} km of {pri['name']}: those "
+        f"first, nearest first, then the rest ({inside / 3600:.1f} h to clear the area at one a second)")
     return [p for _, p in ranked]
 
 
@@ -219,23 +265,35 @@ def crawl_projects():
     f = OUT / "mb_projects.json"
     done, foreign = resume(f, index)
     todo = [p for p in index if p["url"] not in done]
-    print(f"{len(index)} projects: {len(done)} already parsed, {len(todo)} to fetch"
-          + (f", {len(foreign)} rows from another source kept" if foreign else ""), flush=True)
+    say(f"{len(index)} projects: {len(done)} already parsed, {len(todo)} to fetch"
+        + (f", {len(foreign)} rows from another source kept" if foreign else ""))
     todo = prioritise(todo, done, CFG.get("priority"))
 
     def one(p):
+        """The project's card merged with its page, or None when there is no page to merge.
+
+        A record that never reached its project page has no coordinates, so the build drops it and
+        counts it as not located -- which reads as a project the map could not place rather than one
+        this crawl has not read yet. Leaving it out of the checkpoint keeps the two apart: resume()
+        then has it in todo, and the next run asks again.
+        """
         if stop.is_set():
             return None  # a block ended this run: stop asking, and publish nothing half-read
         try:
             html = fetch(p["url"])
-        except Blocked:
-            print("  blocked:", p["url"], flush=True)
+        except Blocked as e:
+            say(f"  blocked: {e}")
             stop.set()
             return None
+        except Gone as e:
+            say(f"  gone: {e}")
+            return None
+        if not html:
+            return None
         try:
-            detail = mb_parse.parse_project_page(html) if html else {}
+            detail = mb_parse.parse_project_page(html)
         except Exception as e:
-            print("  parse failed", p["url"], e, flush=True)
+            say(f"  parse failed {p['url']} {e}")
             detail = {}
         return {**p, **{k: v for k, v in detail.items() if v not in (None, [], "")}}
 
@@ -246,12 +304,12 @@ def crawl_projects():
             if merged:
                 done[merged["url"]] = merged
             if i % EVERY == 0 or i == len(todo):
-                print(f"project {i}/{len(todo)}", flush=True)
+                say(f"project {i}/{len(todo)}")
                 save(f, index, done, foreign)
     save(f, index, done, foreign)
     if stop.is_set():
-        print(f"stopped: the site blocked us, {len(index) - len(done)} projects still unread. Re-run "
-              "later and it picks up from here -- nothing was worked around.", flush=True)
+        say(f"stopped: the site blocked us, {len(index) - len(done)} projects still unread. Re-run "
+            "later and it picks up from here -- nothing was worked around.")
 
 
 if __name__ == "__main__":

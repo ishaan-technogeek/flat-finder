@@ -1,9 +1,11 @@
 import gzip
 import hashlib
+import http.client
 import json
 import pathlib
 import threading
 import time
+import urllib.error
 
 import mb_crawl
 import pytest
@@ -12,6 +14,8 @@ import pytest
 NOISE = "".join(hashlib.sha1(str(i).encode()).hexdigest() for i in range(500))
 REAL = "<html><body>" + mb_crawl.STATE + " = {}</body></html>" + NOISE
 DENIED = "<html><title>Access Denied</title><body>You don't have permission to access this page.</body></html>"
+CHALLENGE = "<html><title>Just a moment...</title><body>Enable JavaScript and cookies to continue</body></html>"
+SHELL = "<html><head><title>Magicbricks</title></head><body></body></html>" + NOISE  # 200, and not a page
 
 
 class Resp:
@@ -23,11 +27,23 @@ class Resp:
 
 
 def serve(monkeypatch, html, tmp_path, sent=None):
-    """Point the cache at tmp_path and answer every request with html."""
+    """Point the cache at tmp_path and answer requests with html.
+
+    html is one page for every url, or a dict of url -> page, where a page is either the body to serve
+    or an HTTP status code to fail with.
+    """
+    def urlopen(req, **kw):
+        if sent is not None:
+            sent.append(req.full_url)
+        page = html[req.full_url] if isinstance(html, dict) else html
+        if isinstance(page, int):
+            raise urllib.error.HTTPError(req.full_url, page, http.client.responses[page], {}, None)
+        return Resp(page)
+
     monkeypatch.setattr(mb_crawl, "CACHE", tmp_path)
     monkeypatch.setattr(mb_crawl, "DELAY", 0)
-    monkeypatch.setattr(mb_crawl.urllib.request, "urlopen",
-                        lambda req, **kw: (sent.append(req.full_url) if sent is not None else None) or Resp(html))
+    monkeypatch.setattr(mb_crawl.time, "sleep", lambda s: None)  # the retry backoff, not the rate gate
+    monkeypatch.setattr(mb_crawl.urllib.request, "urlopen", urlopen)
 
 
 def cache_file(tmp_path, url):
@@ -66,6 +82,83 @@ def test_a_real_page_that_mentions_a_captcha_is_not_a_block(monkeypatch, tmp_pat
     page = REAL.replace("<body>", "<body>captcha widget ")
     serve(monkeypatch, page, tmp_path)
     assert mb_crawl.fetch("https://x/a") == page  # the preloaded state is what says it is a real page
+
+
+def test_a_cdn_challenge_page_in_front_of_the_site_is_a_block(monkeypatch, tmp_path):
+    # the portal does not have to change anything for this to appear: it is Cloudflare's interstitial,
+    # 200 and a body with no project on it, which is the one answer that must never reach the cache
+    serve(monkeypatch, CHALLENGE, tmp_path)
+    assert mb_crawl.is_block(CHALLENGE)
+    with pytest.raises(mb_crawl.Blocked):
+        mb_crawl.fetch("https://x/a")
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_the_site_refusing_us_stops_the_run_instead_of_being_retried(monkeypatch, tmp_path):
+    # 403 and 429 are the site saying no. Retrying is both pointless and the thing it asked us not to do,
+    # and the old code read them as network hiccups: three attempts and 30 s of backoff per project.
+    for code in mb_crawl.REFUSED:
+        sent = []
+        serve(monkeypatch, code, tmp_path, sent)
+        with pytest.raises(mb_crawl.Blocked, match=str(code)):
+            mb_crawl.fetch("https://x/a")
+        assert sent == ["https://x/a"] and list(tmp_path.iterdir()) == []
+
+
+def test_a_page_that_is_not_there_is_asked_for_once(monkeypatch, tmp_path):
+    for code in mb_crawl.MISSING:
+        sent = []
+        serve(monkeypatch, code, tmp_path, sent)
+        with pytest.raises(mb_crawl.Gone, match=str(code)):
+            mb_crawl.fetch("https://x/a")
+        assert sent == ["https://x/a"]  # nothing to wait for, so no second attempt and no backoff
+    # a 5xx is a hiccup and still gets its three attempts
+    sent = []
+    serve(monkeypatch, 503, tmp_path, sent)
+    assert mb_crawl.fetch("https://x/a") is None and len(sent) == 3
+
+
+def test_an_answer_with_no_page_on_it_is_never_cached(monkeypatch, tmp_path):
+    # not a block page we recognise and not a real page either. Cached, it would freeze this project at
+    # all-nulls for as long as the cache lives, reading exactly like a real project with a thin page.
+    sent = []
+    serve(monkeypatch, SHELL, tmp_path, sent)
+    assert not mb_crawl.is_block(SHELL)  # no phrase in it, so the block test has nothing to go on
+    assert mb_crawl.fetch("https://x/a") is None
+    assert len(sent) == 3 and list(tmp_path.iterdir()) == []
+
+
+def test_a_project_page_the_site_has_dropped_leaves_no_half_record(monkeypatch, tmp_path):
+    # a record that never reached its project page has no coordinates, so the build drops it and counts
+    # it as not located -- which reads as a project the map could not place, not one still to be read
+    index = [{"url": "https://m/a", "mb_id": "1"}, {"url": "https://m/gone", "mb_id": "2"}]
+    monkeypatch.setattr(mb_crawl, "OUT", tmp_path)
+    (tmp_path / "mb_index.json").write_text(json.dumps(index))
+    serve(monkeypatch, {"https://m/a": REAL, "https://m/gone": 404}, tmp_path / "cache")
+    monkeypatch.setattr(mb_crawl.mb_parse, "parse_project_page", lambda h: {"lat": 17.4, "lng": 78.3})
+
+    mb_crawl.crawl_projects()
+    rows = json.loads((tmp_path / "mb_projects.json").read_text())
+    assert [r["mb_id"] for r in rows] == ["1"] and rows[0]["lat"] == 17.4
+    # and the next run has it back in the queue rather than treating the half-record as read
+    assert mb_crawl.resume(tmp_path / "mb_projects.json", index) == ({"https://m/a": rows[0]}, [])
+
+
+def test_a_list_page_past_the_end_stops_the_listing_rather_than_crashing(monkeypatch, tmp_path, capsys):
+    # the reported total is the site's own count and has over-counted before; a traceback out of the
+    # worker would lose every page already collected, since the index is only written at the end
+    monkeypatch.setattr(mb_crawl, "OUT", tmp_path)
+    monkeypatch.setattr(mb_crawl, "LIST_URL", "https://m/page-{}")
+    serve(monkeypatch, {"https://m/page-1": REAL, "https://m/page-2": REAL, "https://m/page-3": 404},
+          tmp_path / "cache")
+    monkeypatch.setattr(mb_crawl.mb_parse, "parse_total", lambda h: 60)  # three pages, says the site
+    monkeypatch.setattr(mb_crawl.mb_parse, "parse_list_page",
+                        lambda h: [{"psmid": "1", "pdpUrl": "propertyDetails/a"},
+                                   {"psmid": "2", "pdpUrl": "propertyDetails/b"}])
+
+    mb_crawl.crawl_list()
+    assert len(json.loads((tmp_path / "mb_index.json").read_text())) == 2
+    assert "list page 3 is gone" in capsys.readouterr().out
 
 
 def test_a_half_written_cache_file_is_refetched_instead_of_killing_the_run(monkeypatch, tmp_path):
