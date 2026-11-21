@@ -352,8 +352,9 @@ def main(city="gurgaon"):
     located = [p for p in raw if in_city(p, cfg)]
     # Two different misses, reported apart: a project the portal never gave coordinates for cannot be mapped
     # at all, while one outside the city box is mapped exactly and deliberately not this city's. Added
-    # together under "not_located" they read as 2,384 unplaceable Hyderabad projects, of which 2,383 had
-    # exact coordinates in Yadagirigutta and Zahirabad.
+    # together under "not_located" they read as 2,009 unplaceable Hyderabad projects, where in fact 2,008 of
+    # them are placed to the metre in Yadagirigutta, Zahirabad and Kadthal, 60 km out, and exactly one is
+    # a project the portal has no coordinates for at all.
     no_coords = sum(1 for p in raw if not (p.get("lat") and p.get("lng")))
     outside_city = len(raw) - len(located) - no_coords
     projects = dedupe(located)
