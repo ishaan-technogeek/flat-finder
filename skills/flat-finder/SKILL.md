@@ -46,7 +46,11 @@ Explain the verdicts: **match** (every bedroom read and passes), **likely** (roo
    A seeded city has locations and localities and nothing else. Leave every number it cannot source `null`:
    the site then says it has no price data rather than showing medians of listings nobody read. Re-running
    `build_hyderabad.py` after a crawl keeps the crawled record wherever both have one.
-3. Check the printed counts: `not_located` should be small, and `other` kinds should be under 1%. Open `cd web && npm run dev` then `http://localhost:5173/?city=<city>` and confirm societies sit on the right neighbourhoods.
+3. Check the printed counts: `no_coords` should be small, and `other` kinds should be under 1%. `outside_city`
+   is a different question -- those projects have exact coordinates and the city box put them out, so read the
+   localities before trusting it: a big number is right for a metro the portal files whole districts under, and
+   wrong if the box is clipping the suburbs. Set the city's `pad` from that, in degrees (~111 km each).
+   Open `cd web && npm run dev` then `http://localhost:5173/?city=<city>` and confirm societies sit on the right neighbourhoods.
 4. Run tests: `cd pipeline && uv run --with pytest pytest` and `cd web && npx vitest run --root .. cli web/src`.
 5. Open a pull request with the new data files. Do not commit `pipeline/cache/` or `osm_buildings.geojson`.
 

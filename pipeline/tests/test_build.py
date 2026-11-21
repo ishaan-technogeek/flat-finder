@@ -186,6 +186,21 @@ def test_a_city_can_set_its_own_pad():
     assert build_city.in_city({"lat": 28.1901, "lng": 77.1003}, gurgaon)  # no pad set: Sohna still kept
 
 
+def test_hyderabads_registry_box_reaches_the_suburbs_and_stops():
+    import json
+    import pathlib
+    cfg = json.loads((pathlib.Path(build_city.__file__).parent.parent / "data" / "cities.json").read_text())["hyderabad"]
+    # the portal files these under Hyderabad and they are in its housing market, a few km outside the box:
+    # a strict box dropped 375 projects with exact coordinates, 136 of them with live listings
+    for lat, lng, where in [(17.4404, 78.1916, "Mokila"), (17.4760, 78.1674, "Bhanur"),
+                            (17.2001, 78.5505, "Kongara Kalan"), (17.3760, 78.1850, "Shankarpalle")]:
+        assert build_city.in_city({"lat": lat, "lng": lng}, cfg), where
+    # and these are separate towns an hour out, which the default pad would have swept in
+    for lat, lng, where in [(17.5848, 78.9442, "Yadagirigutta"), (17.6186, 77.9527, "Sadashivpet"),
+                            (17.6754, 77.6135, "Zahirabad"), (16.9000, 78.5000, "Kadthal")]:
+        assert not build_city.in_city({"lat": lat, "lng": lng}, cfg), where
+
+
 def test_city_tokens_never_count_towards_a_name_match():
     assert "gurugram" in build_city.city_tokens("gurgaon", {"name": "Gurugram"})
     assert "gurgaon" in build_city.city_tokens("gurgaon", {"name": "Gurugram"})

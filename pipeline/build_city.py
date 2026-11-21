@@ -31,8 +31,9 @@ TOWER_H = 55.0  # visual default height (m) for generated apartment towers; shap
 DETAIL_KEYS = ("reviews", "description", "trend", "ratings", "images",
                "plan_links", "score_parts", "config_text", "brochure_url")
 PAD = 0.15  # the portal puts some projects just outside the city bbox (Sohna for Gurugram); keep them
-# A city whose bbox was drawn deliberately can say "pad": 0 instead: 0.15 degrees is ~17 km on every side, which
-# for a metro the size of Hyderabad reaches past the outer ring road into towns nobody searching the city means.
+# A city whose bbox was drawn deliberately can set its own: 0.15 degrees is ~17 km on every side, which for a
+# metro the size of Hyderabad reaches past the outer ring road into towns nobody searching the city means. It
+# pays to measure rather than guess -- Hyderabad at 0.15 keeps Yadagirigutta 60 km out and at 0 drops Mokila.
 
 
 def city_tokens(city, cfg):
@@ -323,7 +324,12 @@ def main(city="gurgaon"):
     out = OUT / city
     raw = json.loads((out / "mb_projects.json").read_text())
     located = [p for p in raw if in_city(p, cfg)]
-    not_located = len(raw) - len(located)
+    # Two different misses, reported apart: a project the portal never gave coordinates for cannot be mapped
+    # at all, while one outside the city box is mapped exactly and deliberately not this city's. Added
+    # together under "not_located" they read as 2,384 unplaceable Hyderabad projects, of which 2,383 had
+    # exact coordinates in Yadagirigutta and Zahirabad.
+    no_coords = sum(1 for p in raw if not (p.get("lat") and p.get("lng")))
+    outside_city = len(raw) - len(located) - no_coords
     projects = dedupe(located)
     areas = json.loads((out / "osm_areas.geojson").read_text())["features"]
     area_grid = Grid(areas, lambda a: geo.centroid(a["geometry"]["coordinates"][0]))
@@ -536,7 +542,7 @@ def main(city="gurgaon"):
     doc = {"city": city_doc,
             "price_model": model,
             "room_model": room_model,
-            "counts": {"listed": len(raw), "on_map": len(societies), "not_located": not_located,
+            "counts": {"listed": len(raw), "on_map": len(societies), "no_coords": no_coords, "outside_city": outside_city,
                        "ai_read": sum(1 for s in societies if s.get("ai_read")),
                        "for_sale": sum(s["sale_count"] or 0 for s in societies), "for_rent": sum(s["rent_count"] or 0 for s in societies),
                        "verified": sum(s["verified"] for s in societies)},
