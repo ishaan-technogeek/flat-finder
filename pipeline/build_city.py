@@ -73,6 +73,16 @@ def forms(name):
     return {FORM[t] for t in re.findall(r"[a-z0-9]+", (name or "").lower()) if t in FORM}
 
 
+def other_form(a, b):
+    """Two building forms that cannot be one society: the Park is not the Towers.
+
+    A form is a word a name may simply leave out, so a set containing the other agrees with it: "Cascade
+    Greens" and "Cascade Green Apartments" are one society written twice. Compare other_mark, where an
+    extra part means a different thing rather than a fuller description of the same thing.
+    """
+    return bool(a and b) and not (a <= b or b <= a)
+
+
 def marks(name):
     """Which phase, block, tower, pocket or sector this is.
 
@@ -86,6 +96,16 @@ def marks(name):
             continue
         out.add(ROMAN[t] if t in ROMAN else int(t) if t.isdigit() else t)
     return out
+
+
+def other_mark(a, b):
+    """Two designators that cannot be one society: Pocket B is not Pocket E, Block 1 is not Block G.
+
+    Every mark a name carries has to agree, so one extra mark is a different thing: "Mahathi Jaswitha
+    Cyber Connect 1 Block 1" and "... Block G" share only the 1 in the project's own name. A name that
+    marks nothing conflicts with nothing, and dedupe lets it stand for the one phase it absorbs.
+    """
+    return bool(a and b) and a != b
 
 
 UNIT_KIND = {"10002": "apartment", "10021": "apartment", "10003": "builder floor", "10000": "plot", "10017": "villa",
@@ -187,7 +207,9 @@ def dedupe(projects):
     The building word is the other half of the same rule, because tokens() drops it as generic: Aditya
     Empress Park, Aditya Empress Towers and Aditya Empress Heights are three separately listed projects
     within 300 m, with 30 live listings between the two that used to be deleted. Across Hyderabad that
-    was 57 projects and 69 listings off the map.
+    was 57 projects and 69 listings off the map. It is the looser half, though -- a name can leave the
+    building word out and still mean the same building, so "Cascade Greens" takes in "Cascade Green
+    Apartments", while an extra *mark* is always a different block.
 
     An unmarked name still merges with a marked one -- the portal files one society as both "Beverly
     Park" and "Beverly Park II" -- but only with one of them. Once it has absorbed a phase it stands
@@ -195,10 +217,6 @@ def dedupe(projects):
     swallowed both "The Legend Somajiguda I" and "The Legend Somajiguda II" before this, and 18
     societies in Hyderabad were standing in for two or more phases each.
     """
-    def apart(a, b):
-        """These two name different things, rather than one naming nothing: B is not E, Park is not Towers."""
-        return bool(a and b and a != b)
-
     groups = defaultdict(list)
     for i, p in enumerate(projects):
         groups[frozenset(tokens(p["name"]))].append((i, p, marks(p["name"]), forms(p["name"])))
@@ -211,12 +229,13 @@ def dedupe(projects):
         for i, p, m, fm in members:
             for survivor in here:
                 q = survivor[1]
-                if apart(m, survivor[2]) or apart(fm, survivor[3]):
+                if other_mark(m, survivor[2]) or other_form(fm, survivor[3]):
                     continue
                 if geo.dist_m((p["lng"], p["lat"]), (q["lng"], q["lat"])) < 400:
                     q.setdefault("merged", []).append(p["url"])
-                    # a survivor that named neither now stands for the phase and the form it absorbed
-                    survivor[2], survivor[3] = survivor[2] or m, survivor[3] or fm
+                    # a survivor now stands for every phase and form it has absorbed, so the next listing
+                    # is compared against all of them: "Bellezza" that took "Bellezza Tower" is the tower
+                    survivor[2], survivor[3] = survivor[2] | m, survivor[3] | fm
                     break
             else:
                 here.append([i, p, m, fm])

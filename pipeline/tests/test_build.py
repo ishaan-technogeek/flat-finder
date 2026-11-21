@@ -110,6 +110,29 @@ def test_dedupe_reads_a_plural_as_the_same_form():
     assert [p["url"] for p in out] == ["plain", "park"] and out[0]["merged"] == ["sing", "plur"]
 
 
+def test_dedupe_reads_an_added_form_word_as_the_same_society():
+    # the form rule has to allow one name to say more than the other: "Cascade Green Apartments" is the
+    # apartments in Cascade Greens, not a second society, and strict inequality gave it its own blank pin
+    rows = [{"name": "Cascade Greens", "lng": 78.3600, "lat": 17.4300, "url": "g"},
+            {"name": "Cascade Green Apartments", "lng": 78.3601, "lat": 17.4301, "url": "ga"},  # ~15 m
+            {"name": "Cascade Green Towers", "lng": 78.3602, "lat": 17.4302, "url": "gt"}]
+    out = build_city.dedupe(rows)
+    # and once it stands for the apartments, the towers next door are still their own society
+    assert [p["url"] for p in out] == ["g", "gt"] and out[0]["merged"] == ["ga"]
+
+
+def test_an_extra_mark_is_a_different_block_but_an_extra_form_word_is_not():
+    # the asymmetry between the two rules, which is the whole reason they are two functions: a name that
+    # leaves "Apartments" out still means the same building, and "Block 1" never means "Block G"
+    assert build_city.other_form({"green"}, {"green", "apartment"}) is False
+    assert build_city.other_form({"tower"}, {"green", "apartment"}) is True
+    assert build_city.other_mark({1}, {1, "g"}) is True       # Mahathi Jaswitha Cyber Connect 1, two blocks
+    assert build_city.other_mark(set(), {2}) is False         # marks nothing: absorbs the first phase it meets
+    rows = [{"name": "Mahathi Jaswitha Cyber Connect 1 Block G", "lng": 78.3500, "lat": 17.5400, "url": "bg"},
+            {"name": "Mahathi Jaswitha Cyber Connect 1 Block 1", "lng": 78.3501, "lat": 17.5401, "url": "b1"}]
+    assert [p["url"] for p in build_city.dedupe(rows)] == ["bg", "b1"]
+
+
 def test_marks_reads_only_the_part_tokens_drops():
     assert build_city.marks("RWA Pocket B") == {"b"}
     assert build_city.marks("M3M Antalya Hills Phase I") == {1}  # "m3m" is 3 chars, so it is a name token
