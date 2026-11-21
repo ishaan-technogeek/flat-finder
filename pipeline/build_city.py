@@ -573,11 +573,22 @@ def main(city="gurgaon"):
     print(doc["counts"], Counter(s["shape"] for s in societies), Counter(s["kind"] for s in societies), "features", len(shapes))
 
 
+def price_bhks(societies):
+    """The bedroom counts that have a price to export, in order.
+
+    A fixed 1 to 5 dropped every cell above that from the export without saying so: Hyderabad has 179
+    priced cells on 92 societies at 6 to 10 BHK, and a city of bigger homes would lose more.
+    """
+    return sorted({int(b) for s in societies for b, p in s["prices"].items()
+                   if any(p.get(k) for k in ("buy", "rent", "buy_est", "rent_est"))})
+
+
 def write_csv(soc_path, unit_path, societies):
     """Flat exports: one row per society, and one row per unit type with bedroom sizes."""
+    bhks = price_bhks(societies)
     cols = ["id", "name", "developer", "locality", "type", "lat", "lng", "status", "possession", "rera_id", "towers", "units", "acres",
             "listings_for_sale", "listings_for_rent", "price_range_min", "price_range_max", "price_per_sqft"]
-    for b in range(1, 6):
+    for b in bhks:
         cols += [f"buy_{b}bhk_median", f"buy_{b}bhk_estimate", f"rent_{b}bhk_median", f"rent_{b}bhk_estimate", f"{b}bhk_price_flag"]
     # source_url, not magicbricks_url: the column holds s["url"], which is wherever the society was found.
     # For a city built from a seed file that is its OpenStreetMap node, and naming the portal in the header
@@ -591,7 +602,7 @@ def write_csv(soc_path, unit_path, societies):
             smallest = min(rooms, key=lambda r: r[0]) if rooms else None
             row = [s["id"], s["name"], s["developer"], s["locality"], s["kind"], s["lat"], s["lng"], s["status"], s["possession"], s["rera_id"],
                    s["towers"], s["units"], s["acres"], s["sale_count"], s["rent_count"], s["price_min"], s["price_max"], s["psf_now"]]
-            for b in range(1, 6):
+            for b in bhks:
                 p = s["prices"].get(str(b), {})
                 row += [(p.get("buy") or {}).get("median"), (p.get("buy_est") or {}).get("value"),
                         (p.get("rent") or {}).get("median"), (p.get("rent_est") or {}).get("value"),

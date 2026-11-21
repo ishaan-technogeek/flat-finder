@@ -117,6 +117,14 @@ def test_marks_reads_only_the_part_tokens_drops():
     assert build_city.marks("Heritage One") == set()  # "one" is a word here, not a phase number
 
 
+def test_csv_price_columns_come_from_the_data():
+    socs = [{"prices": {"2": {"buy": {"median": 1}}, "3": {}}},
+            {"prices": {"6": {"rent_est": {"value": 2}}, "10": {"rent": {"median": 3}}}}]
+    # 6 and 10 BHK were silently missing from the export; 3 has a cell with no price in it and no column
+    assert build_city.price_bhks(socs) == [2, 6, 10]
+    assert build_city.price_bhks([{"prices": {}}]) == []
+
+
 def test_gmaps_url_matches_the_one_the_browser_builds():
     # the same three societies as web/src/html.test.js, asserting the same bytes: the browser derives
     # this link and write_csv publishes it, so the two encoders have to stay in step
