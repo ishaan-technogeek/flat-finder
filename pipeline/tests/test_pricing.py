@@ -29,6 +29,19 @@ def test_estimates_are_labelled_and_never_replace_listings():
     assert s["prices"][4]["buy_est"]["value"] == 30000000 and s["prices"][4]["rent_est"]["value"] == 75000
 
 
+def test_an_estimate_says_whose_rate_it_used_and_whether_the_price_was_one():
+    m = {"city_yield": 0.03, "bhk_yield": {}, "locality_yield": {}}
+    s = soc("Kokapet", {})
+    pricing.add_estimates(s, m, {3: 1800}, psf_fallback=7000, psf_from="the median rate of 48 listings in Kokapet")
+    p = s["prices"][3]
+    assert p["buy_est"]["basis"] == "1,800 sq ft × ₹7,000/sq ft, the median rate of 48 listings in Kokapet"
+    # and the rent off that price is an estimate of an estimate, which used to read the same as this one
+    assert p["rent_est"]["basis"] == "the estimated price × city rental yield (3.0%)"
+    listed = soc("Kokapet", {3: {"buy": {"median": 1.2e7}}})
+    pricing.add_estimates(listed, m, {}, psf_fallback=7000)
+    assert listed["prices"][3]["rent_est"]["basis"] == "the listed price × city rental yield (3.0%)"
+
+
 def test_flags_typos_but_keeps_values_and_skips_them_for_estimates():
     socs = [soc("Sector 57", {3: {"buy": {"median": 4e7, "min": 4e7, "max": 4e7, "n": 2}, "rent": {"median": 90000, "min": 90000, "max": 90000, "n": 1}}}) for _ in range(5)]
     bad = soc("Sector 57", {3: {"buy": {"median": 4.1e7, "min": 3.7e7, "max": 3.9e8, "n": 4}, "rent": {"median": 960000, "min": 960000, "max": 960000, "n": 1}}})

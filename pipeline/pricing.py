@@ -151,8 +151,17 @@ def usable(p, kind):
     return p.get(kind) and kind not in p.get("flags", {}) and p[kind]["median"]
 
 
-def add_estimates(s, model, sizes_by_bhk, psf_fallback):
-    """Fill buy_est / rent_est for each BHK of a society that lacks listings."""
+def add_estimates(s, model, sizes_by_bhk, psf_fallback, psf_from=""):
+    """Fill buy_est / rent_est for each BHK of a society that lacks listings.
+
+    psf_from says where psf_fallback came from, and belongs in the shown basis: the price per sq ft is the
+    society's own in only some cases, and for 1,512 Hyderabad societies it is the median of other projects in
+    the locality. "1,250 sq ft x Rs 7,500/sq ft" reads as this project's rate either way.
+
+    A rent derived from an estimated price says so too. 2,794 Hyderabad cells are an estimate of an estimate
+    -- a size times a foreign rate, divided by a yield -- and read exactly like one derived from a listed
+    price, which is the one thing the basis line exists to distinguish.
+    """
     bhks = set(s["prices"]) | set(sizes_by_bhk)
     for bhk in bhks:
         p = s["prices"].setdefault(bhk, {})
@@ -163,10 +172,13 @@ def add_estimates(s, model, sizes_by_bhk, psf_fallback):
             p["buy_est"] = {"value": round(rent * 12 / y, -4), "basis": f"rent ÷ {why} ({y:.1%})"}
             buy = p["buy_est"]["value"]
         if not buy and sizes_by_bhk.get(bhk) and psf_fallback:
+            rate = f"{int(sizes_by_bhk[bhk]):,} sq ft × ₹{int(psf_fallback):,}/sq ft"
             p["buy_est"] = {"value": round(sizes_by_bhk[bhk] * psf_fallback, -4),
-                            "basis": f"{int(sizes_by_bhk[bhk]):,} sq ft × ₹{int(psf_fallback):,}/sq ft"}
+                            "basis": f"{rate}, {psf_from}" if psf_from else rate}
             buy = p["buy_est"]["value"]
         if not rent and buy:
-            p["rent_est"] = {"value": round(buy * y / 12, -2), "basis": f"price × {why} ({y:.1%})"}
+            # buy_est is set here only when buy is the estimate just made from a size and a rate
+            priced = "the estimated price" if p.get("buy_est") else "the listed price"
+            p["rent_est"] = {"value": round(buy * y / 12, -2), "basis": f"{priced} × {why} ({y:.1%})"}
         if not p:
             del s["prices"][bhk]

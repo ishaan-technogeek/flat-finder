@@ -526,9 +526,19 @@ def main(city="gurgaon"):
             if u.get("bhk") and size:
                 sizes[u["bhk"]].append(size)
         own = [b["psf"] for b in s["prices"].values() if b.get("psf") and "buy" not in b.get("flags", {})]
-        psf = statistics.median(own) if own else s.get("psf_now") or (statistics.median(loc_psf[s["locality"]]) if len(loc_psf[s["locality"]]) >= 3 else None)
+        peers = loc_psf[s["locality"]]
+        # three different rates, and an estimate built on one should name which: only the first is a rate
+        # somebody is asking for a home in this society
+        if own:
+            psf, psf_from = statistics.median(own), f"the rate in its own {len(own)} listed price" + ("s" if len(own) > 1 else "")
+        elif s.get("psf_now"):
+            psf, psf_from = s["psf_now"], "the portal's rate for this project"
+        elif len(peers) >= 3:
+            psf, psf_from = statistics.median(peers), f"the median rate of {len(peers)} listings in {s['locality']}"
+        else:
+            psf, psf_from = None, ""
         if s["kind"] in ("apartment", "builder floor", "villa"):
-            pricing.add_estimates(s, model, {b: statistics.median(v) for b, v in sizes.items()}, psf)
+            pricing.add_estimates(s, model, {b: statistics.median(v) for b, v in sizes.items()}, psf, psf_from)
         s["prices"] = {str(b): v for b, v in sorted(s["prices"].items())}
 
     for s in societies:
