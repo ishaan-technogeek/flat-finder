@@ -74,10 +74,17 @@ export function addSocietyLayers(map, shapes, points) {
       'text-opacity': ['match', ['feature-state', 'st'], 'match', 1, 'likely', 0.85, 'probable', 0.85, 'unknown', 0.35, 'no', 0, 0.7] } });
 }
 
-// Pulse the glow of matches. Cheap: one paint property on ~2,700 circles.
+// Pulse the glow of matches: one paint property a tick, but the tick is twelve a second for as long as
+// the page is open, and the layer under it carries every society in the city -- 28,720 of them in
+// Hyderabad, not Gurugram's 2,700. So it does nothing while the glow is switched off or the tab is in the
+// background, where a repaint nobody can see still costs a frame.
+let pulse = null;
+
 export function startPulse(map) {
-  setInterval(() => {
-    if (!map.getLayer('glow')) return;
+  clearInterval(pulse); // called a second time, for a second map or a re-styled one: one timer, not two
+  pulse = setInterval(() => {
+    if (!map.getLayer('glow') || document.hidden) return;
+    if (map.getLayoutProperty('glow', 'visibility') === 'none') return;
     const k = 1 + 0.35 * Math.sin(performance.now() / 420);
     map.setPaintProperty('glow', 'circle-radius', ['interpolate', ['linear'], ['zoom'], 9, 2 * k, 12, 6 * k, 15, 24 * k]);
   }, 80);

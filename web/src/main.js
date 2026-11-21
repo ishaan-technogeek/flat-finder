@@ -9,7 +9,10 @@ import { esc, gmapsUrl, href } from './html.js';
 
 const $ = (id) => document.getElementById(id);
 const mobile = matchMedia('(max-width: 700px)').matches;
-const REPO = 'https://github.com/kairothq/flat-finder';
+// The repository this copy of the site is served from. "Request a room check" opens an issue here, so it
+// has to be the fork that is deployed: pointing it upstream sends a reader of this map to file a Hyderabad
+// issue on a repository that has never heard of Hyderabad.
+const REPO = 'https://github.com/ishaan-technogeek/flat-finder';
 // Where the site is served from, with a trailing slash. '/' on its own domain, '/<repo>/' on GitHub Pages;
 // Vite bakes it in at build time from `base`, so every data file and permalink has to be built from it.
 const BASE = import.meta.env.BASE_URL;
@@ -57,7 +60,16 @@ async function boot() {
   if (city.city.default_mode === 'buy' || city.city.default_mode === 'rent') crit.mode = city.city.default_mode;
   byId = new Map(city.societies.map((s) => [s.id, s]));
   $('city-pick').replaceChildren(...Object.entries(cities).map(([id, c]) => new Option(c.name, id, false, id === cityId)));
-  $('city-pick').onchange = () => { location.search = `?city=${$('city-pick').value}`; };
+  $('city-pick').onchange = () => {
+    // Keep the rest of the url. Switching city used to drop it, so a reader on satellite with an example
+    // search running was put back on the street map with the search cleared. `list` and `open` do not come
+    // along: they name societies in the city being left, and those ids mean nothing in the one being opened.
+    const q = new URLSearchParams(location.search);
+    q.set('city', $('city-pick').value);
+    q.delete('list');
+    q.delete('open');
+    location.search = `?${q}`;
+  };
 
   const freq = new Map();
   for (const s of city.societies) for (const a of s.amenities) freq.set(a, (freq.get(a) || 0) + 1);
@@ -135,7 +147,12 @@ function intro() {
     feed.ambient();
     return;
   }
-  setStates(map, data.societies.map((s) => [s.id, 'no']));
+  // The map is told everything is 'no' for the flight in, and `states` has to say the same thing: it was
+  // left empty until applyFilters ran on moveend, four and a half seconds later, and anything read in
+  // between got undefined -- a search typed during the flight tagged its results `class="tag undefined"`
+  // and sorted them by NaN.
+  states = new Map(data.societies.map((s) => [s.id, 'no']));
+  setStates(map, states);
   map.jumpTo({ center: [78.5, 22.5], zoom: 2.2, pitch: 0, bearing: 0 });
   setTimeout(() => {
     map.flyTo({ ...OVERVIEW, duration: 4250, curve: 1.6, essential: true });
@@ -263,9 +280,13 @@ function buildFilters() {
   $('amen-q').oninput = amenList;
   $('f-ready').onchange = () => { crit.ready = $('f-ready').checked; applyFilters(); };
   $('f-sort').onchange = () => { sortBy = $('f-sort').value; renderResults(); };
-  // Divy's search is for a 138 sq ft bedroom in a 1,620 sq ft home: real filters, but a city with no
-  // floor plans and no listed sizes can only answer "not checked yet" to all of it.
-  $('preset-divy').hidden = !((data.counts.for_sale || 0) + (data.counts.for_rent || 0));
+  // Divy's search is for a 138 sq ft bedroom in a 1,620 sq ft home: real filters, but the bedroom half
+  // needs a room measured off a floor plan, read off one by Jev, or at least estimated from the unit
+  // size, and a city with none of the three can only answer "not checked yet" to all of it. The gate
+  // used to be the listing count, which Hyderabad clears with 28,530 listings and not one measured room,
+  // so the button was there and did nothing. Gurugram has 503 societies with rooms, 135 read by Jev.
+  const anyRooms = (s) => (s.unit_types || []).some((u) => u.bedrooms?.length || u.ai || u.est_area != null);
+  $('preset-divy').hidden = !data.societies.some(anyRooms);
   $('preset-divy').onclick = () => useCriteria(DIVY);
   $('btn-replay').onclick = intro;
   $('btn-tour').onclick = tour;
@@ -415,7 +436,7 @@ function renderCard(s) {
         + (u.confidence === 'ocr' ? ` <span class="fine">(read from the plan by ${esc(u.checked_by || 'OCR')})</span>` : '')
       : u.est_short ? `<span class="fine">plans not read · estimated at least ${feetLabel(u.est_short)} wide, ~${u.est_area} sq ft</span>` : '<span class="fine">room sizes not read yet</span>';
     const srcLabel = u.confidence === 'ai' || u.confidence === 'ocr' ? 'plan image' : u.confidence === 'primary' ? `plan${u.page ? ' p.' + esc(u.page) : ''}` : `portal${u.page ? ' p.' + esc(u.page) : ''}`;
-    const src = u.source ? `<a href="${esc(u.source)}" target="_blank" rel="noopener">${srcLabel}</a>` : '';
+    const src = href(u.source) ? `<a href="${href(u.source)}" target="_blank" rel="noopener">${srcLabel}</a>` : '';
     const size = u.super_sqft ? `${u.super_sqft.toLocaleString()} super` : u.carpet_sqft ? `${u.carpet_sqft.toLocaleString()} carpet` : u.size_sqft ? `${u.size_sqft.toLocaleString()}` : '';
     const vl = { unknown: 'unread', probable: 'probably' }[v] || v;
     return `<tr><td>${esc(u.label)}<div class="fine">${size ? size + ' sq ft' : ''}</div></td><td>${roomText}</td><td>${v ? `<span class="badge ${v}">${vl}</span>` : ''}</td><td>${src}</td></tr>`;

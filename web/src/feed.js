@@ -1,7 +1,7 @@
 // Research log: replays real provenance steps. Never invents one. The steps come from eventsFor(), which
 // derives them from the society itself -- the city file used to ship all 16,174 of them for a panel that
 // shows fourteen lines at a time.
-import { esc } from './html.js';
+import { esc, href } from './html.js';
 import { canVouch, eventsFor } from './events.js';
 
 export function createFeed(el, modeEl, { societies, byId, cityName }) {
@@ -14,7 +14,9 @@ export function createFeed(el, modeEl, { societies, byId, cityName }) {
     const s = byId.get(e.sid);
     const d = document.createElement('div');
     if (e.verified) d.className = 'v';
-    const link = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.step)}</a>` : esc(e.step);
+    // href(), not esc(): the step's url is a portal link or an OpenStreetMap tag, so the city file is
+    // not a trusted source and esc() says nothing about where a url points
+    const link = href(e.url) ? `<a href="${href(e.url)}" target="_blank" rel="noopener">${esc(e.step)}</a>` : esc(e.step);
     d.innerHTML = `${link} · <em>${esc(s?.name)}</em><br><b>${esc(e.finding)}</b>`;
     el.prepend(d);
     requestAnimationFrame(() => d.classList.add('on'));
