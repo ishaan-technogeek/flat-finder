@@ -31,15 +31,28 @@ def fit(verified_societies):
     a2, b2 = _fit(xs, [p[2] for p in pts])
     short_gap = max(0.0, max((a1 + b1 * x) - y for x, y, _ in pts))
     area_gap = max(0.0, max((a2 + b2 * x) - z for x, _, z in pts))
-    return {"n": len(pts), "short": [round(a1, 4), round(b1, 4), round(short_gap, 3)], "area": [round(a2, 3), round(b2, 3), round(area_gap, 2)]}
+    return {"n": len(pts), "short": [round(a1, 4), round(b1, 4), round(short_gap, 3)], "area": [round(a2, 3), round(b2, 3), round(area_gap, 2)],
+            # The range of homes actually fitted, so lower_bounds can tell a cap from an extrapolation.
+            # Rounded outwards: to 4 decimal places the smallest fitted home rounded up out of its own range.
+            "x": [math.floor(min(xs) * 1e4) / 1e4, math.ceil(max(xs) * 1e4) / 1e4]}
 
 
 def lower_bounds(model, size_sqft, bhk):
-    """(short side ft, area sq ft) the smallest bedroom is probably at least, or None."""
+    """(short side ft, area sq ft) the smallest bedroom is probably at least, or None.
+
+    Only for homes the size of the ones fitted. Above that range the bound is capped at the largest
+    verified home, which understates and so keeps the promise in this module's docstring. Below it there
+    is nothing honest to say: "2 BHK 109 sq ft" is a portal typo, and a line run that far down published
+    "the smallest bedroom is at least -56 sq ft" for 18 Gurugram units and under 60 sq ft for 138 more.
+    """
     if not model or not size_sqft or not bhk:
         return None
     x = math.log(size_sqft / bhk)
+    lo, hi = model.get("x") or (0.0, math.log(1600))
+    if x < lo:
+        return None
+    x = min(x, hi)
     a1, b1, g1 = model["short"]
     a2, b2, g2 = model["area"]
-    # never extrapolate beyond the largest verified homes: cap the gain at the top of the fitted range
-    return round(a1 + b1 * min(x, math.log(1600)) - g1, 2), round(a2 + b2 * min(x, math.log(1600)) - g2)
+    short, area = round(a1 + b1 * x - g1, 2), round(a2 + b2 * x - g2)
+    return (short, area) if short > 0 and area > 0 else None
